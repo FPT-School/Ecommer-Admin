@@ -6,7 +6,7 @@ const UNAUTHORIZED = 401;
 const FORBIDDEN = 403;
 
 const axiosClient = axios.create({
-  baseURL: 'https://33ce-2402-800-6294-423b-ad53-77e7-ba9b-c006.ngrok.io/',
+  baseURL: 'http://fresh-food.live',
   headers: {
     'Content-Type': 'application/json',
   },
