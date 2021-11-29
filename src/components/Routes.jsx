@@ -4,12 +4,13 @@ import { Route, Switch } from 'react-router-dom'
 
 import Dashboard from 'pages/Dashboard'
 import Customers from 'pages/Customers'
-
+import ProductList from 'components/List-Product'
 const Routes = () => {
     return (
         <Switch>
             <Route path='/' exact component={Dashboard}/>
             <Route path='/customers' component={Customers}/>
+            <Route path='/products' component={ProductList}/>
         </Switch>
     )
 }

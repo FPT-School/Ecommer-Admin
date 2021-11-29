@@ -18,7 +18,7 @@ const Customers = () => {
         <div className="col-12">
           <div className="card">
             <div className="card__body">
-              <tr>
+              <tr className='table' style={{height:'50px'}}>
                 <th>ID</th>
                 <th>Tên</th>
                 <th>Số điện thoại</th>
