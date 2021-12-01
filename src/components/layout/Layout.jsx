@@ -6,7 +6,7 @@ import TopNav from '../topnav/TopNav'
 import  Routes from '../Routes'
 
 import { BrowserRouter, Route } from 'react-router-dom'
-import Addcategors from '../categorys/addcategory'
+
 
 export class Layout extends Component {
     render() {
