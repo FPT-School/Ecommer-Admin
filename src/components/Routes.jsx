@@ -6,6 +6,7 @@ import Dashboard from 'pages/Dashboard'
 import Customers from 'pages/Customers'
 import BarChart from 'pages/BarChart'
 
+
 const Routes = () => {
     return (
         <Switch>
