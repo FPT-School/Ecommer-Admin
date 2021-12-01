@@ -11,7 +11,7 @@
     },
     {
         "display_name": "Danh sách sản phẩm",
-        "route": "/products",
+        "route": "/product-list",
         "icon": "bx bx-package"
     },
     {
