@@ -1,0 +1,67 @@
+
+tr {
+    text-align: center;
+   
+}
+.table{
+    background-color: rgb(236, 234, 234);
+    text-align: center;
+}
+td {
+    text-transform: capitalize;
+    padding: 15px 10px;
+}
+td>img{
+    height: 100px;
+    width:70px
+}
+tr:hover{
+    background-color: rgb(245, 240, 240);
+    border-radius: 30px;
+}
+.card>.card__body>tr>td>.btn1{
+    background-Color: green;
+     color:white;
+     border-radius: 3px;
+     height: 30px;
+     width: 80px;
+}
+.card>.card__body>tr>td>.btn2{
+    background-Color:red;
+     color:white;
+     border-radius: 3px;
+     height: 30px;
+     width: 80px;
+}
+.button1 {
+    background-color: #f44336; 
+    border-radius: 20px;
+    color: white;
+    padding: 12px 21px;
+    text-align: center;
+    
+    font-size: 16px;
+    margin: 4px 2px;
+   
+}
+
+
+.button2 {
+    background-color: #008CBA; 
+    border-radius: 20px;
+    color: white;
+    padding: 12px 21px;
+    text-align: center;
+  
+    font-size: 16px;
+    margin: 4px 2px;
+    
+}
+.button1:hover{
+    background-color: rgb(250, 113, 113);
+    color: black;
+}
+.button2:hover{
+    background-color: #559bb3;
+    color: black;
+}

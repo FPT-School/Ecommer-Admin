@@ -12,7 +12,7 @@ const Customer = ({data}) => {
                 <td>{data.phone}</td>
                 <td>{data.address.city}</td>
                 <td>{data.email}</td>
-                <td>
+                <td style={{width:'200px'}}>
                     <button className='button1' onClick={handleDelete}>Xóa</button>
                     <button className='button2'>Sửa</button>
                 </td>
