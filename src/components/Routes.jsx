@@ -5,6 +5,7 @@ import { Route, Switch } from 'react-router-dom'
 import Dashboard from 'pages/Dashboard'
 import Customers from 'pages/Customers'
 import BarChart from 'pages/BarChart'
+import Categories from 'pages/Categories'
 
 // import ProductList from 'components/List-Product'
 
@@ -19,6 +20,7 @@ const Routes = () => {
             <Route path='/Analytics' component={BarChart}/>
             <Route path='/product-list' component={ProductList}/>
             <Route path='/orders' component={Orders}/>
+            <Route path='/categories' component={Categories}/>
         </Switch>
     )
 }
