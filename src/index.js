@@ -1,16 +1,18 @@
+import 'antd/dist/antd.css';
 import React from 'react';
 import ReactDOM from 'react-dom';
-import './index.css';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import App from './App';
+import './index.css';
+import Providers from './Providers';
 import reportWebVitals from './reportWebVitals';
-import { store } from 'app/store';
-import { Provider } from 'react-redux';
-import 'antd/dist/antd.css';
 
 ReactDOM.render(
-  <Provider store={store}>
+  <Providers>
     <App />
-  </Provider>,
+    <ToastContainer />
+  </Providers>,
   document.getElementById('root')
 );
 

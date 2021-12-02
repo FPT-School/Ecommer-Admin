@@ -6,7 +6,7 @@ const UNAUTHORIZED = 401;
 const FORBIDDEN = 403;
 
 const axiosClient = axios.create({
-  baseURL: 'http://fresh-food.live',
+  baseURL: 'https://ecommer-backend-g6sfl.ondigitalocean.app/api/',
   headers: {
     'Content-Type': 'application/json',
   },
