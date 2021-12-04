@@ -2,6 +2,8 @@ import axios from 'axios';
 import { JODY } from 'config';
 import { toast } from 'react-toastify';
 
+import { get } from 'lodash';
+
 const UNAUTHORIZED = 401;
 const FORBIDDEN = 403;
 
@@ -14,9 +16,9 @@ const axiosClient = axios.create({
 
 axiosClient.interceptors.request.use(
   function (config) {
-    const accessToken = localStorage.getItem(JODY);
+    const localStore = JSON.parse(localStorage.getItem(JODY));
     config.headers = {
-      Authorization: `${accessToken || ''}`,
+      Authorization: `Bearer ${get(localStore, 'tokens.access.token', '')}`,
     };
     return config;
   },

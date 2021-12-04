@@ -15,6 +15,11 @@
         "icon": "bx bx-package"
     },
     {
+        "display_name": "Màu sắc",
+        "route": "/colors",
+        "icon": "bx bx-package"
+    },
+    {
         "display_name": "Đặt hàng",
         "route": "/orders",
         "icon": "bx bx-cart"
