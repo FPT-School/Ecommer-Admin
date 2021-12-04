@@ -20,7 +20,12 @@
         "icon": "bx bx-package"
     },
     {
-        "display_name": "Đặt hàng",
+        "display_name": "Danh mục",
+        "route": "/category",
+        "icon": "bx bx-list-ol"
+    },
+    {
+        "display_name": "Đơn hàng",
         "route": "/orders",
         "icon": "bx bx-cart"
     },
@@ -30,23 +35,8 @@
         "icon": "bx bx-bar-chart-alt"
     },
     {
-        "display_name": "Danh mục",
-        "route": "/categories",
-        "icon": "bx bx-list-ol"
-    },
-    {
         "display_name": "Giảm giá",
         "route": "/discount",
         "icon": "bx bx-gift"
-    },
-    {
-        "display_name": "Kiểm toán",
-        "route": "/inventory",
-        "icon": "bx bx-store-alt"
-    },
-    {
-        "display_name": "Cài đặt",
-        "route": "/settings",
-        "icon": "bx bx-cog"
     }
 ]

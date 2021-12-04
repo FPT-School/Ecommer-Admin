@@ -1,152 +1,167 @@
+import { unwrapResult } from '@reduxjs/toolkit';
+import { Button, Col, Form, Input, Modal, Row, Spin } from 'antd';
 import {
-  Form,
-  Input,
-  Pagination,
-  Button,
-  Table,
-  Row,
-  Col,
-  Modal,
-  InputNumber,
-  Select,
-} from 'antd';
-import React, { useCallback } from 'react';
-import './styles.scss';
-const { Option } = Select;
+  createCategoryAsync,
+  getCategoryAsync,
+  removeCategoryAsync,
+  updateCategoryAsync,
+} from 'features/categorySlice';
+
+import {
+  createProductAsync,
+  getProductAsync,
+  removeProductAsync,
+  updateProductAsync,
+} from 'features/productSlice';
+
+import { findIndex, get, keyBy, values } from 'lodash';
+import 'pages/Auth/styles.scss';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { toast } from 'react-toastify';
 
 const ProductList = () => {
-  const [currentPage, setCurrentPage] = React.useState(1);
-  const [isShow, setIsShow] = React.useState(false);
+  const dispatch = useDispatch();
+  const [isShow, setIsShow] = useState(false);
+  const [formName, setFormName] = useState('add');
+  const [currentId, setCurrentId] = useState(null);
+  const [productListData, setProductListData] = useState({});
 
-  const columns = [
-    {
-      title: 'Mã sản phẩm',
-      dataIndex: 'id',
-      key: 'id',
-    },
-    {
-      title: 'Tên sản phẩm',
-      dataIndex: 'productName',
-      key: 'productName',
-    },
-    {
-      title: 'Số lượng',
-      dataIndex: 'quantity',
-      key: 'quantity',
-    },
-    {
-      title: 'Hình ảnh',
-      dataIndex: 'image',
-      key: 'image',
-      render: (data) => {
-        return (
-          <div style={{ height: 50 }}>
-            <img
-              src={data}
-              alt="img"
-              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-            />
-          </div>
-        );
-      },
-    },
-    {
-      title: 'Trạng thái',
-      dataIndex: 'status',
-      key: 'status',
-    },
-    {
-      title: 'Hành động khác',
-      dataIndex: '',
-      key: 'x',
-      render: () => (
-        <div>
-          <Button type="primary">Sửa</Button>
-          <Button danger style={{ marginLeft: 10 }}>
-            Xoá
-          </Button>
-        </div>
-      ),
-    },
-  ];
+  const isFormAdd = formName === 'add';
 
-  const dataSource = [
-    {
-      id: '1',
-      productName: 'Áo',
-      quantity: '10',
-      image:
-        'https://storage.googleapis.com/cdn.nhanh.vn/store/3138/ps/20210830/AKM4027_XAH__4__thumb.jpg',
-      status: 'Còn hàng',
-    },
-    {
-      id: '2',
-      productName: 'Áo',
-      quantity: '10',
-      image:
-        'https://storage.googleapis.com/cdn.nhanh.vn/store/3138/ps/20210830/AKM4027_XAH__4__thumb.jpg',
-      status: 'Còn hàng',
-    },
-  ];
+  useEffect(() => {
+    (async () => {
+      const getProductAction = await dispatch(getProductAsync());
+      const { results } = unwrapResult(getProductAction);
+      setProductListData(keyBy(results, 'id'));
+    })();
+  }, []);
 
-  const onChangePage = useCallback(
-    (page) => {
-      setCurrentPage(page);
-    },
-    [currentPage]
-  );
+  const { isLoading } = useSelector((state) => state.category);
 
   const onToggle = useCallback(() => {
     setIsShow(!isShow);
   }, [isShow]);
 
+  const onCloseModal = useCallback(() => {
+    setIsShow(false);
+    setFormName('add');
+  }, [isShow]);
+
+  const onUpdate = (id) => {
+    onToggle();
+    setFormName('edit');
+    setCurrentId(id);
+  };
+
+  const updateColor = useCallback(
+    async (formValue) => {
+      try {
+        const includeColor = findIndex(
+          values(productListData),
+          (elm) => elm.categoryName === formValue.categoryName
+        );
+
+        if (includeColor === -1) {
+          const payload = { id: currentId, data: formValue };
+          await dispatch(updateCategoryAsync(payload));
+
+          productListData[currentId] = {
+            categoryName: formValue.categoryName,
+            id: currentId,
+          };
+          setProductListData({ ...productListData });
+
+          Promise.resolve()
+            .then(onCloseModal())
+            .then(setFormName('add'))
+            .then(toast.success('Cập nhập thành công !'));
+        } else {
+          toast.error(`danh mục ${formValue.categoryName} này đã tồn tại`, {
+            autoClose: 2000,
+            theme: 'colored',
+          });
+        }
+      } catch (e) {
+        toast.error(e.message, {
+          autoClose: 2000,
+          theme: 'colored',
+        });
+      }
+    },
+    [productListData, currentId]
+  );
+
+  const createColor = useCallback(
+    async (formValue) => {
+      try {
+        const includeColor = findIndex(
+          values(productListData),
+          (elm) => elm.categoryName === formValue.categoryName
+        );
+
+        if (includeColor === -1) {
+          const createAction = await dispatch(createCategoryAsync(formValue));
+          const data = unwrapResult(createAction);
+          setProductListData({ ...productListData, [data.id]: data });
+          Promise.resolve()
+            .then(onCloseModal())
+            .then(toast.success('Thêm danh mục thành công !'));
+        } else {
+          toast.error(`Danh mục ${formValue.categoryName} này đã tồn tại`, {
+            autoClose: 2000,
+            theme: 'colored',
+          });
+        }
+      } catch (e) {}
+    },
+    [productListData, values]
+  );
+
   const onFinish = (values) => {
-    console.log('Success:', values);
+    if (formName === 'add') {
+      createColor(values);
+    } else {
+      updateColor(values);
+    }
   };
 
-  const onFinishFailed = (errorInfo) => {
-    console.log('Failed:', errorInfo);
-  };
+  const removeColor = useCallback(
+    async (id) => {
+      try {
+        await dispatch(removeProductAsync(id));
+        delete productListData[id];
+        setProductListData({ ...productListData });
+        toast.success('Xoá sản phẩm thành công !');
+      } catch (e) {
+        toast.error(e.message, {
+          autoClose: 2000,
+          theme: 'colored',
+        });
+      }
+    },
+    [productListData]
+  );
 
+  if (isLoading) return <Spin />;
   return (
-    <div className="product-list">
+    <>
       <Modal
-        title="Thêm sản phẩm"
+        title={isFormAdd ? 'Thêm danh mục sản phẩm' : 'Cập nhập danh mục'}
         visible={isShow}
-        onCancel={onToggle}
+        onCancel={onCloseModal}
         footer={null}>
         <Form
           name="basic"
           initialValues={{ remember: true }}
           onFinish={onFinish}
-          onFinishFailed={onFinishFailed}
           layout="vertical"
           autoComplete="off">
           <Form.Item
-            label="Tên sản phẩm"
-            name="nameProduct"
-            rules={[
-              { required: true, message: 'Please input your username!' },
-            ]}>
-            <Input />
-          </Form.Item>
-
-          <Form.Item
-            label="Số lượng"
-            name="quantity"
-            rules={[
-              { required: true, message: 'Please input your password!' },
-            ]}>
-            <InputNumber style={{ width: '100%' }} />
-          </Form.Item>
-          <Form.Item label="Trạng thái" name="status">
-            <Select
-              defaultValue="lucy"
-              style={{ width: '1' }}
-              onChange={() => {}}>
-              <Option value="0">Còn hàng</Option>
-              <Option value="1">Hết hàng</Option>
-            </Select>
+            label="Tên danh mục"
+            name="categoryName"
+            rules={[{ required: true, message: 'Vui lòng nhập tên danh mục' }]}>
+            <Input placeholder="Tên danh mục..." />
           </Form.Item>
 
           <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
@@ -162,7 +177,7 @@ const ProductList = () => {
                   type="primary"
                   style={{ marginLeft: 5 }}
                   htmlType="submit">
-                  Thêm sản phẩm
+                  {isFormAdd ? 'Thêm Danh mục' : 'Cập nhật'}
                 </Button>
               </Col>
             </Row>
@@ -173,21 +188,80 @@ const ProductList = () => {
       <Row
         className="product-list__title"
         align="middle"
-        justify="space-between">
-        <Col>
-          <h2 className="page-header">Đặt hàng</h2>
-        </Col>
+        justify="space-between"
+        style={{ paddingBottom: 10 }}>
+        <Col></Col>
         <Col>
           <Button type="primary" onClick={onToggle}>
             Thêm sản phẩm
           </Button>
         </Col>
       </Row>
-      <Table dataSource={dataSource} columns={columns} pagination={false} />
-      <div style={{ paddingTop: 10 }}>
-        <Pagination current={currentPage} total={50} onChange={onChangePage} />
-      </div>
-    </div>
+
+      <Row
+        gutter={24}
+        align="middle"
+        justify="space-between"
+        style={{
+          background: '#FAFAFA',
+          padding: 10,
+        }}>
+        <Col span={1}>STT</Col>
+        <Col span={3}>Tên Sản phẩm</Col>
+        <Col span={2}>Size</Col>
+        <Col span={3}>Danh mục</Col>
+        <Col span={3}>Giá</Col>
+        <Col span={2}>Số lượng</Col>
+        <Col span={4}>Hình ảnh</Col>
+        <Col span={6}>Hành động</Col>
+      </Row>
+
+      {values(productListData).map((category, idx) => {
+        return (
+          <Row
+            key={category.id}
+            gutter={24}
+            align="middle"
+            justify="space-between"
+            style={{
+              background: '#FAFAFA',
+              padding: 10,
+            }}>
+            <Col span={1}>{idx + 1}</Col>
+            <Col span={3}>{get(category, 'product_name', '')}</Col>
+            <Col span={2}>{get(category, 'product_size', '')}</Col>
+            <Col span={3}>{get(category, 'category', '')}</Col>
+            <Col span={3}>{get(category, 'price', '')}</Col>
+            <Col span={2}>{get(category, 'sold', '')}</Col>
+            <Col span={4}>
+              <div>
+                <img
+                  src={get(category, 'images.url', '')}
+                  alt="img"
+                  width="100px"
+                />
+              </div>
+            </Col>
+
+            <Col span={6}>
+              <Row>
+                <Button
+                  type="primary"
+                  onClick={() => onUpdate(get(category, 'id', ''))}>
+                  Sửa
+                </Button>
+                <Button
+                  danger
+                  style={{ marginLeft: 10 }}
+                  onClick={() => removeColor(get(category, 'id', ''))}>
+                  Xoá
+                </Button>
+              </Row>
+            </Col>
+          </Row>
+        );
+      })}
+    </>
   );
 };
 

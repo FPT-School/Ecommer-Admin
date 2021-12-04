@@ -15,6 +15,7 @@ const Orders = lazy(() => import('pages/Orders'));
 const Analytics = lazy(() => import('pages/BarChart'));
 
 const ColorPage = lazy(() => import('pages/Colors'));
+const CategoryPage = lazy(() => import('pages/Category'));
 
 const NotFound = lazy(() => import('pages/NotFound'));
 
@@ -59,6 +60,13 @@ export const routes = [
     layout: MainLayout,
     exact: true,
     component: ColorPage,
+    guard: AuthGuard,
+  },
+  {
+    path: '/category',
+    layout: MainLayout,
+    exact: true,
+    component: CategoryPage,
     guard: AuthGuard,
   },
 
