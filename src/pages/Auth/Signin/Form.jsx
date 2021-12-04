@@ -7,6 +7,9 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { get } from 'lodash';
+import { ACCESS_TOKEN } from 'config';
+import { REFRESH_TOKEN } from 'config';
 
 const FormLogin = () => {
   const dispatch = useDispatch();
@@ -31,6 +34,15 @@ const FormLogin = () => {
         });
         return;
       } else {
+        localStorage.setItem(
+          ACCESS_TOKEN,
+          get(data, 'tokens.access.token', '')
+        );
+
+        localStorage.setItem(
+          REFRESH_TOKEN,
+          get(data, 'tokens.refresh.token', '')
+        );
         localStorage.setItem(JODY, JSON.stringify(data));
         toast.success('Đăng nhập thành công !', {
           autoClose: 2000,

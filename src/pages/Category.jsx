@@ -6,34 +6,27 @@ import {
   removeCategoryAsync,
   updateCategoryAsync,
 } from 'features/categorySlice';
-
-import {
-  createProductAsync,
-  getProductAsync,
-  removeProductAsync,
-  updateProductAsync,
-} from 'features/productSlice';
-
 import { findIndex, get, keyBy, values } from 'lodash';
 import 'pages/Auth/styles.scss';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 
-const ProductList = () => {
+const Category = () => {
   const dispatch = useDispatch();
   const [isShow, setIsShow] = useState(false);
   const [formName, setFormName] = useState('add');
   const [currentId, setCurrentId] = useState(null);
-  const [productListData, setProductListData] = useState({});
+  const [categoryData, setCategoryData] = useState({});
+
 
   const isFormAdd = formName === 'add';
 
   useEffect(() => {
     (async () => {
-      const getProductAction = await dispatch(getProductAsync());
-      const { results } = unwrapResult(getProductAction);
-      setProductListData(keyBy(results, 'id'));
+      const getCategoryAction = await dispatch(getCategoryAsync());
+      const { results } = unwrapResult(getCategoryAction);
+      setCategoryData(keyBy(results, 'id'));
     })();
   }, []);
 
@@ -58,7 +51,7 @@ const ProductList = () => {
     async (formValue) => {
       try {
         const includeColor = findIndex(
-          values(productListData),
+          values(categoryData),
           (elm) => elm.categoryName === formValue.categoryName
         );
 
@@ -66,11 +59,11 @@ const ProductList = () => {
           const payload = { id: currentId, data: formValue };
           await dispatch(updateCategoryAsync(payload));
 
-          productListData[currentId] = {
+          categoryData[currentId] = {
             categoryName: formValue.categoryName,
             id: currentId,
           };
-          setProductListData({ ...productListData });
+          setCategoryData({ ...categoryData });
 
           Promise.resolve()
             .then(onCloseModal())
@@ -89,21 +82,21 @@ const ProductList = () => {
         });
       }
     },
-    [productListData, currentId]
+    [categoryData, currentId]
   );
 
   const createColor = useCallback(
     async (formValue) => {
       try {
         const includeColor = findIndex(
-          values(productListData),
+          values(categoryData),
           (elm) => elm.categoryName === formValue.categoryName
         );
 
         if (includeColor === -1) {
           const createAction = await dispatch(createCategoryAsync(formValue));
           const data = unwrapResult(createAction);
-          setProductListData({ ...productListData, [data.id]: data });
+          setCategoryData({ ...categoryData, [data.id]: data });
           Promise.resolve()
             .then(onCloseModal())
             .then(toast.success('Thêm danh mục thành công !'));
@@ -115,7 +108,7 @@ const ProductList = () => {
         }
       } catch (e) {}
     },
-    [productListData, values]
+    [categoryData, values]
   );
 
   const onFinish = (values) => {
@@ -129,10 +122,10 @@ const ProductList = () => {
   const removeColor = useCallback(
     async (id) => {
       try {
-        await dispatch(removeProductAsync(id));
-        delete productListData[id];
-        setProductListData({ ...productListData });
-        toast.success('Xoá sản phẩm thành công !');
+        await dispatch(removeCategoryAsync(id));
+        delete categoryData[id];
+        setCategoryData({ ...categoryData });
+        toast.success('Xoá danh mục thành công !');
       } catch (e) {
         toast.error(e.message, {
           autoClose: 2000,
@@ -140,7 +133,7 @@ const ProductList = () => {
         });
       }
     },
-    [productListData]
+    [categoryData]
   );
 
   if (isLoading) return <Spin />;
@@ -193,7 +186,7 @@ const ProductList = () => {
         <Col></Col>
         <Col>
           <Button type="primary" onClick={onToggle}>
-            Thêm sản phẩm
+            Thêm danh mục sản phẩm
           </Button>
         </Col>
       </Row>
@@ -206,17 +199,12 @@ const ProductList = () => {
           background: '#FAFAFA',
           padding: 10,
         }}>
-        <Col span={1}>STT</Col>
-        <Col span={3}>Tên Sản phẩm</Col>
-        <Col span={2}>Size</Col>
-        <Col span={3}>Danh mục</Col>
-        <Col span={3}>Giá</Col>
-        <Col span={2}>Số lượng</Col>
-        <Col span={4}>Hình ảnh</Col>
-        <Col span={6}>Hành động</Col>
+        <Col span={6}>STT</Col>
+        <Col span={6}>Tên Danh mục</Col>
+        <Col span={12}>Hành Động khác</Col>
       </Row>
 
-      {values(productListData).map((category, idx) => {
+      {values(categoryData).map((category, idx) => {
         return (
           <Row
             key={category.id}
@@ -227,23 +215,10 @@ const ProductList = () => {
               background: '#FAFAFA',
               padding: 10,
             }}>
-            <Col span={1}>{idx + 1}</Col>
-            <Col span={3}>{get(category, 'product_name', '')}</Col>
-            <Col span={2}>{get(category, 'product_size', '')}</Col>
-            <Col span={3}>{get(category, 'category', '')}</Col>
-            <Col span={3}>{get(category, 'price', '')}</Col>
-            <Col span={2}>{get(category, 'sold', '')}</Col>
-            <Col span={4}>
-              <div>
-                <img
-                  src={get(category, 'images.url', '')}
-                  alt="img"
-                  width="100px"
-                />
-              </div>
-            </Col>
+            <Col span={6}>{idx + 1}</Col>
+            <Col span={6}>{get(category, 'categoryName', '')}</Col>
 
-            <Col span={6}>
+            <Col span={12}>
               <Row>
                 <Button
                   type="primary"
@@ -265,4 +240,4 @@ const ProductList = () => {
   );
 };
 
-export default ProductList;
+export default Category;

@@ -1,13 +1,13 @@
-import React from "react";
-import "./topnav.css";
-import { Link } from "react-router-dom";
-import Dropdown from "../dropdown/Dropdown";
+import React from 'react';
+import { useHistory } from 'react-router-dom';
 // import ThemeMenu from "../thememenu/ThemeMenu";
-import user_image from "../../assets/images/logo.png";
-import user_menu from "../../assets/JsonData/user_menus.json";
+import user_image from '../../assets/images/logo.png';
+import user_menu from '../../assets/JsonData/user_menus.json';
+import Dropdown from '../dropdown/Dropdown';
+import './topnav.css';
 
 const curr_user = {
-  display_name: "YoDy",
+  display_name: 'YoDy',
   image: user_image,
 };
 
@@ -20,16 +20,15 @@ const renderUserToggle = (user) => (
   </div>
 );
 
-const renderUserMenu = (item, index) => (
-  <Link to="/" key={index}>
-    <div className="notification-item">
-      <i className={item.icon}></i>
-      <span>{item.content}</span>
-    </div>
-  </Link>
-);
-
 const Topnav = () => {
+  const history = useHistory();
+  const handleLogout = () => {
+    Promise.resolve()
+      .then(localStorage.clear())
+      .then(() => {
+        history.push('/signin');
+      });
+  };
   return (
     <div className="topnav">
       <div className="topnav__search">
@@ -41,15 +40,23 @@ const Topnav = () => {
           <Dropdown
             customToggle={() => renderUserToggle(curr_user)}
             contentData={user_menu}
-            renderItems={(item, index) => renderUserMenu(item, index)}
+            renderItems={(item, index) => {
+              return (
+                <div
+                  key={index}
+                  className="notification-item"
+                  onClick={handleLogout}>
+                  <i className={item.icon}></i>
+                  <span>{item.content}</span>
+                </div>
+              );
+            }}
           />
         </div>
         <div className="topnav__right-item">
           <i className="bx bx-bell"></i>
         </div>
-        <div className="topnav__right-item">
-          {/* <ThemeMenu /> */}
-        </div>
+        <div className="topnav__right-item">{/* <ThemeMenu /> */}</div>
       </div>
     </div>
   );

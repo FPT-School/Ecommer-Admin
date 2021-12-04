@@ -1,43 +1,38 @@
-import { unwrapResult } from '@reduxjs/toolkit';
-import { Button, Col, Form, Input, Modal, Row, Spin } from 'antd';
-import {
-  createCategoryAsync,
-  getCategoryAsync,
-  removeCategoryAsync,
-  updateCategoryAsync,
-} from 'features/categorySlice';
+import { Button, Col, Form, Input, Modal, Row, Spin, Table } from 'antd';
 
 import {
-  createProductAsync,
-  getProductAsync,
-  removeProductAsync,
-  updateProductAsync,
-} from 'features/productSlice';
+  getColorAsync,
+  createColorAsync,
+  removeColorAsync,
+  updateColorAsync,
+} from 'features/colorSlice';
 
-import { findIndex, get, keyBy, values } from 'lodash';
 import 'pages/Auth/styles.scss';
 import React, { useCallback, useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { unwrapResult } from '@reduxjs/toolkit';
+import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'react-toastify';
+import { values, get, keyBy, findIndex } from 'lodash';
 
-const ProductList = () => {
+const Colors = () => {
   const dispatch = useDispatch();
   const [isShow, setIsShow] = useState(false);
   const [formName, setFormName] = useState('add');
   const [currentId, setCurrentId] = useState(null);
-  const [productListData, setProductListData] = useState({});
+  const [colorData, setColorData] = useState({});
+  const [form] = Form.useForm();
 
   const isFormAdd = formName === 'add';
 
   useEffect(() => {
     (async () => {
-      const getProductAction = await dispatch(getProductAsync());
-      const { results } = unwrapResult(getProductAction);
-      setProductListData(keyBy(results, 'id'));
+      const getColorAction = await dispatch(getColorAsync());
+      const { results } = unwrapResult(getColorAction);
+      setColorData(keyBy(results, 'id'));
     })();
   }, []);
 
-  const { isLoading } = useSelector((state) => state.category);
+  const { isLoading } = useSelector((state) => state.color);
 
   const onToggle = useCallback(() => {
     setIsShow(!isShow);
@@ -46,6 +41,7 @@ const ProductList = () => {
   const onCloseModal = useCallback(() => {
     setIsShow(false);
     setFormName('add');
+    form.resetFields();
   }, [isShow]);
 
   const onUpdate = (id) => {
@@ -58,26 +54,26 @@ const ProductList = () => {
     async (formValue) => {
       try {
         const includeColor = findIndex(
-          values(productListData),
-          (elm) => elm.categoryName === formValue.categoryName
+          values(colorData),
+          (elm) => elm.colorHex === formValue.colorHex
         );
 
         if (includeColor === -1) {
           const payload = { id: currentId, data: formValue };
-          await dispatch(updateCategoryAsync(payload));
+          await dispatch(updateColorAsync(payload));
 
-          productListData[currentId] = {
-            categoryName: formValue.categoryName,
+          colorData[currentId] = {
+            colorHex: formValue.colorHex,
             id: currentId,
           };
-          setProductListData({ ...productListData });
+          setColorData({ ...colorData });
 
           Promise.resolve()
             .then(onCloseModal())
             .then(setFormName('add'))
             .then(toast.success('Cập nhập thành công !'));
         } else {
-          toast.error(`danh mục ${formValue.categoryName} này đã tồn tại`, {
+          toast.error(`Màu ${formValue.colorHex} này đã tồn tại`, {
             autoClose: 2000,
             theme: 'colored',
           });
@@ -89,33 +85,33 @@ const ProductList = () => {
         });
       }
     },
-    [productListData, currentId]
+    [colorData, currentId]
   );
 
   const createColor = useCallback(
     async (formValue) => {
       try {
         const includeColor = findIndex(
-          values(productListData),
-          (elm) => elm.categoryName === formValue.categoryName
+          values(colorData),
+          (elm) => elm.colorHex === formValue.colorHex
         );
 
         if (includeColor === -1) {
-          const createAction = await dispatch(createCategoryAsync(formValue));
+          const createAction = await dispatch(createColorAsync(formValue));
           const data = unwrapResult(createAction);
-          setProductListData({ ...productListData, [data.id]: data });
+          setColorData({ ...colorData, [data.id]: data });
           Promise.resolve()
             .then(onCloseModal())
-            .then(toast.success('Thêm danh mục thành công !'));
+            .then(toast.success('Thêm màu thành công !'));
         } else {
-          toast.error(`Danh mục ${formValue.categoryName} này đã tồn tại`, {
+          toast.error(`Màu ${formValue.colorHex} này đã tồn tại`, {
             autoClose: 2000,
             theme: 'colored',
           });
         }
       } catch (e) {}
     },
-    [productListData, values]
+    [colorData, values]
   );
 
   const onFinish = (values) => {
@@ -129,10 +125,10 @@ const ProductList = () => {
   const removeColor = useCallback(
     async (id) => {
       try {
-        await dispatch(removeProductAsync(id));
-        delete productListData[id];
-        setProductListData({ ...productListData });
-        toast.success('Xoá sản phẩm thành công !');
+        await dispatch(removeColorAsync(id));
+        delete colorData[id];
+        setColorData({ ...colorData });
+        toast.success('Xoá màu thành công !');
       } catch (e) {
         toast.error(e.message, {
           autoClose: 2000,
@@ -140,34 +136,35 @@ const ProductList = () => {
         });
       }
     },
-    [productListData]
+    [colorData]
   );
 
   if (isLoading) return <Spin />;
   return (
     <>
       <Modal
-        title={isFormAdd ? 'Thêm danh mục sản phẩm' : 'Cập nhập danh mục'}
+        title={isFormAdd ? 'Thêm màu sản phẩm' : 'Cập nhật màu sản phẩm'}
         visible={isShow}
         onCancel={onCloseModal}
         footer={null}>
         <Form
+          form={form}
           name="basic"
-          initialValues={{ remember: true }}
+          initialValues={{ colorHex: '#000', remember: true }}
           onFinish={onFinish}
           layout="vertical"
           autoComplete="off">
           <Form.Item
-            label="Tên danh mục"
-            name="categoryName"
-            rules={[{ required: true, message: 'Vui lòng nhập tên danh mục' }]}>
-            <Input placeholder="Tên danh mục..." />
+            label="Chọn màu"
+            name="colorHex"
+            rules={[{ required: true, message: 'Vui lòng chọn màu' }]}>
+            <Input type="color" />
           </Form.Item>
 
           <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
             <Row align="middle" justify="end">
               <Col>
-                <Button type="default" onClick={onToggle}>
+                <Button type="default" onClick={onCloseModal}>
                   Huỷ bỏ
                 </Button>
               </Col>
@@ -177,7 +174,7 @@ const ProductList = () => {
                   type="primary"
                   style={{ marginLeft: 5 }}
                   htmlType="submit">
-                  {isFormAdd ? 'Thêm Danh mục' : 'Cập nhật'}
+                  {isFormAdd ? 'Thêm màu' : 'Cập nhật'}
                 </Button>
               </Col>
             </Row>
@@ -193,7 +190,7 @@ const ProductList = () => {
         <Col></Col>
         <Col>
           <Button type="primary" onClick={onToggle}>
-            Thêm sản phẩm
+            Thêm màu sản phẩm
           </Button>
         </Col>
       </Row>
@@ -206,20 +203,15 @@ const ProductList = () => {
           background: '#FAFAFA',
           padding: 10,
         }}>
-        <Col span={1}>STT</Col>
-        <Col span={3}>Tên Sản phẩm</Col>
-        <Col span={2}>Size</Col>
-        <Col span={3}>Danh mục</Col>
-        <Col span={3}>Giá</Col>
-        <Col span={2}>Số lượng</Col>
-        <Col span={4}>Hình ảnh</Col>
-        <Col span={6}>Hành động</Col>
+        <Col span={6}>Mã màu</Col>
+        <Col span={6}>Mã Hex</Col>
+        <Col span={12}>Hành Động khác</Col>
       </Row>
 
-      {values(productListData).map((category, idx) => {
+      {values(colorData).map((color) => {
         return (
           <Row
-            key={category.id}
+            key={color.id}
             gutter={24}
             align="middle"
             justify="space-between"
@@ -227,33 +219,21 @@ const ProductList = () => {
               background: '#FAFAFA',
               padding: 10,
             }}>
-            <Col span={1}>{idx + 1}</Col>
-            <Col span={3}>{get(category, 'product_name', '')}</Col>
-            <Col span={2}>{get(category, 'product_size', '')}</Col>
-            <Col span={3}>{get(category, 'category', '')}</Col>
-            <Col span={3}>{get(category, 'price', '')}</Col>
-            <Col span={2}>{get(category, 'sold', '')}</Col>
-            <Col span={4}>
-              <div>
-                <img
-                  src={get(category, 'images.url', '')}
-                  alt="img"
-                  width="100px"
-                />
-              </div>
-            </Col>
-
+            <Col span={6}>{get(color, 'colorHex', '')}</Col>
             <Col span={6}>
+              <Input type="color" value={get(color, 'colorHex', '')} />
+            </Col>
+            <Col span={12}>
               <Row>
                 <Button
                   type="primary"
-                  onClick={() => onUpdate(get(category, 'id', ''))}>
+                  onClick={() => onUpdate(get(color, 'id', ''))}>
                   Sửa
                 </Button>
                 <Button
                   danger
                   style={{ marginLeft: 10 }}
-                  onClick={() => removeColor(get(category, 'id', ''))}>
+                  onClick={() => removeColor(get(color, 'id', ''))}>
                   Xoá
                 </Button>
               </Row>
@@ -265,4 +245,4 @@ const ProductList = () => {
   );
 };
 
-export default ProductList;
+export default Colors;

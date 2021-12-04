@@ -2,6 +2,7 @@ import Sidebar from 'components/sidebar/Sidebar';
 import Topnav from 'components/topnav/TopNav';
 import React from 'react';
 import { Row, Col } from 'antd';
+
 const MainLayout = (props) => {
   const { children } = props;
 
