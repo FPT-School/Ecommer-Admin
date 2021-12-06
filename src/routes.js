@@ -16,6 +16,7 @@ const Analytics = lazy(() => import('pages/BarChart'));
 
 const ColorPage = lazy(() => import('pages/Colors'));
 const CategoryPage = lazy(() => import('pages/Category'));
+const UserPage = lazy(() => import('pages/UserList'));
 
 const NotFound = lazy(() => import('pages/NotFound'));
 
@@ -67,6 +68,13 @@ export const routes = [
     layout: MainLayout,
     exact: true,
     component: CategoryPage,
+    guard: AuthGuard,
+  },
+  {
+    path: '/users',
+    layout: MainLayout,
+    exact: true,
+    component: UserPage,
     guard: AuthGuard,
   },
 
