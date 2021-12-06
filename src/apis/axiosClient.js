@@ -25,9 +25,15 @@ const refreshAccessToken = () => {
 
 axiosClient.interceptors.request.use(
   function (config) {
+      // eslint-disable-next-line no-console
+    console.log(config, '<----');
     const accessToken = localStorage.getItem(ACCESS_TOKEN) || '';
     config.headers = {
       Authorization: `Bearer ${accessToken}`,
+      Accept: 'application/json',
+      'Content-Type': config.isFormData
+        ? 'multipart/form-data'
+        : 'application/json',
     };
     return config;
   },

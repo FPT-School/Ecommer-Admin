@@ -6,7 +6,7 @@
     },
     {
         "display_name": "Người dùng",
-        "route": "/customers",
+        "route": "/users",
         "icon": "bx bx-user-pin"
     },
     {
