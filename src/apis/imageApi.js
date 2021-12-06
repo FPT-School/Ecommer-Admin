@@ -10,13 +10,14 @@ const productApi = {
   },
 
   add(data) {
-    return axiosClient.post('/image-products', data);
+    console.log(data, 'data')
+    return axiosClient.post('/image-products', data, { isFormData: true });
   },
 
   update(id, data) {
     return axiosClient.patch(`/image-products/${id}`, data);
   },
-  
+
   remove(id) {
     return axiosClient.delete(`/image-products/${id}`);
   },

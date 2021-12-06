@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { Link } from 'react-router-dom';
+import { useHistory, useRouteMatch } from 'react-router';
 
 import './Sidebar.css';
 
@@ -22,6 +23,8 @@ const SidebarItem = (props) => {
 };
 
 const Sidebar = (props) => {
+  const match = useRouteMatch();
+
   return (
     <div className="sidebar">
       <div className="sidebar__logo">
@@ -35,7 +38,7 @@ const Sidebar = (props) => {
           <SidebarItem
             title={item.display_name}
             icon={item.icon}
-            // active={true}
+            active={item.route === match.url}
           />
         </Link>
       ))}

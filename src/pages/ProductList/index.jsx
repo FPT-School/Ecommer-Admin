@@ -1,24 +1,37 @@
+import { UploadOutlined } from '@ant-design/icons';
 import { unwrapResult } from '@reduxjs/toolkit';
-import { Button, Col, Form, Input, Modal, Row, Spin } from 'antd';
+import {
+  Button,
+  Col,
+  Form,
+  Input,
+  InputNumber,
+  Modal,
+  Row,
+  Select,
+  Spin,
+  Upload,
+} from 'antd';
 import {
   createCategoryAsync,
-  getCategoryAsync,
-  removeCategoryAsync,
   updateCategoryAsync,
 } from 'features/categorySlice';
-
 import {
-  createProductAsync,
   getProductAsync,
+  createProductAsync,
   removeProductAsync,
-  updateProductAsync,
 } from 'features/productSlice';
-
+import { useGetCategory } from 'hooks/useGetCategory';
+import { useGetColor } from 'hooks/useGetColor';
 import { findIndex, get, keyBy, values } from 'lodash';
 import 'pages/Auth/styles.scss';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
+
+import { postImageAsync } from 'features/imageSlice';
+
+const { Option } = Select;
 
 const ProductList = () => {
   const dispatch = useDispatch();
@@ -26,8 +39,10 @@ const ProductList = () => {
   const [formName, setFormName] = useState('add');
   const [currentId, setCurrentId] = useState(null);
   const [productListData, setProductListData] = useState({});
-
   const isFormAdd = formName === 'add';
+
+  const { categoryData } = useGetCategory();
+  const { colorData } = useGetColor();
 
   useEffect(() => {
     (async () => {
@@ -54,7 +69,7 @@ const ProductList = () => {
     setCurrentId(id);
   };
 
-  const updateColor = useCallback(
+  const updateProduct = useCallback(
     async (formValue) => {
       try {
         const includeColor = findIndex(
@@ -92,23 +107,24 @@ const ProductList = () => {
     [productListData, currentId]
   );
 
-  const createColor = useCallback(
+  const createProduct = useCallback(
     async (formValue) => {
       try {
+        console.log(formValue, 'formValue')
         const includeColor = findIndex(
           values(productListData),
-          (elm) => elm.categoryName === formValue.categoryName
+          (elm) => elm.productCode === formValue.productCode
         );
 
         if (includeColor === -1) {
-          const createAction = await dispatch(createCategoryAsync(formValue));
+          const createAction = await dispatch(createProductAsync(formValue));
           const data = unwrapResult(createAction);
           setProductListData({ ...productListData, [data.id]: data });
           Promise.resolve()
             .then(onCloseModal())
-            .then(toast.success('Thêm danh mục thành công !'));
+            .then(toast.success('Thêm sản phẩm thành công !'));
         } else {
-          toast.error(`Danh mục ${formValue.categoryName} này đã tồn tại`, {
+          toast.error(`Sản phẩm ${formValue.includeColor} này đã tồn tại`, {
             autoClose: 2000,
             theme: 'colored',
           });
@@ -120,9 +136,9 @@ const ProductList = () => {
 
   const onFinish = (values) => {
     if (formName === 'add') {
-      createColor(values);
+      createProduct(values);
     } else {
-      updateColor(values);
+      updateProduct(values);
     }
   };
 
@@ -143,11 +159,37 @@ const ProductList = () => {
     [productListData]
   );
 
+  const normFile = (e) => {
+    console.log('Upload event:', e);
+
+    if (Array.isArray(e)) {
+      return e;
+    }
+
+    return e && e.fileList;
+  };
+
+  const fileList = [];
+
+  const handleChange = async ({ fileList }) => {
+    try {
+      const formData = new FormData();
+      formData.append('codeColor', '#b2d66b');
+      fileList.forEach((image) => {
+        formData.append('images', image.originFileObj);
+      });
+
+      await dispatch(postImageAsync(formData));
+    } catch (e) {
+      console.log(e, '<----');
+    }
+  };
+
   if (isLoading) return <Spin />;
   return (
     <>
       <Modal
-        title={isFormAdd ? 'Thêm danh mục sản phẩm' : 'Cập nhập danh mục'}
+        title={isFormAdd ? 'Thêm sản phẩm' : 'Cập nhập sản phẩm'}
         visible={isShow}
         onCancel={onCloseModal}
         footer={null}>
@@ -156,12 +198,143 @@ const ProductList = () => {
           initialValues={{ remember: true }}
           onFinish={onFinish}
           layout="vertical"
-          autoComplete="off">
+          autoComplete="true">
+          <Row gutter={24}>
+            <Col span={12}>
+              <Form.Item
+                label="Mã sản phẩm"
+                name="productCode"
+                rules={[
+                  { required: true, message: 'Vui lòng nhập trường này' },
+                ]}>
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="Tên sản phẩm"
+                name="productName"
+                rules={[
+                  { required: true, message: 'Vui lòng nhập trường này' },
+                ]}>
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={24}>
+            <Col span={12}>
+              <Form.Item
+                name="male"
+                label="Giới tính"
+                rules={[
+                  { required: true, message: 'Vui lòng nhập trường này' },
+                ]}>
+                <Select placeholder="Chọn giới tính">
+                  <Option value="0">Nam</Option>
+                  <Option value="1">Nữ</Option>
+                  <Option value="other">Khác</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="Danh mục"
+                name="categoryId"
+                rules={[
+                  { required: true, message: 'Vui lòng nhập trường này' },
+                ]}>
+                <Select>
+                  {categoryData.map((elm) => (
+                    <Select.Option key={elm.id} value={elm.id}>
+                      {get(elm, 'categoryName', '')}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={24}>
+            <Col span={12}>
+              <Form.Item
+                label="Màu sản phẩm"
+                name="colorId"
+                rules={[
+                  { required: true, message: 'Vui lòng nhập trường này' },
+                ]}>
+                <Select>
+                  {colorData.map((elm) => (
+                    <Select.Option key={elm.id} value={elm.id}>
+                      <Input
+                        type="color"
+                        disabled
+                        value={get(elm, 'colorHex', '')}
+                      />
+                    </Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="Trạng thái"
+                name="status"
+                rules={[
+                  { required: true, message: 'Vui lòng nhập trường này' },
+                ]}>
+                <Select>
+                  <Select.Option value="0">Hết hàng</Select.Option>
+                  <Select.Option value="1">Còn hàng</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={24}>
+            <Col span={12}>
+              <Form.Item
+                label="Giảm giá"
+                name="discount"
+                rules={[
+                  { required: true, message: 'Vui lòng nhập trường này' },
+                ]}>
+                <InputNumber style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="Size"
+                name="size"
+                rules={[
+                  { required: true, message: 'Vui lòng nhập trường này' },
+                ]}>
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+
           <Form.Item
-            label="Tên danh mục"
-            name="categoryName"
-            rules={[{ required: true, message: 'Vui lòng nhập tên danh mục' }]}>
-            <Input placeholder="Tên danh mục..." />
+            label="Vật liệu"
+            name="materialProduct"
+            rules={[{ required: true, message: 'Vui lòng nhập trường này' }]}>
+            <Input />
+          </Form.Item>
+
+          <Form.Item
+            name="images"
+            label="Hình ảnh"
+            valuePropName="fileList"
+            getValueFromEvent={normFile}
+            rules={[{ required: true, message: 'Vui lòng nhập trường này' }]}
+            extra="...">
+            <Upload
+              listType="picture-card"
+              fileList={fileList}
+              // onPreview={this.handlePreview}
+              onChange={handleChange}>
+              {fileList.length >= 8 ? null : 'Tải ảnh lên'}
+            </Upload>
           </Form.Item>
 
           <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
