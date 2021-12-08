@@ -12,8 +12,8 @@ const productApi = {
     return axiosClient.post('/products', data);
   },
 
-  update(id, data) {
-    return axiosClient.patch(`/products/${id}`, data);
+  update(payload) {
+    return axiosClient.patch(`/products/${payload.id}`, payload.data);
   },
   remove(id) {
     return axiosClient.delete(`/products/${id}`);
