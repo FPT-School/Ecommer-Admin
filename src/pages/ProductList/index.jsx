@@ -1,5 +1,23 @@
 import { UploadOutlined } from '@ant-design/icons';
 import { unwrapResult } from '@reduxjs/toolkit';
+<<<<<<< HEAD
+import {
+  Button,
+  Col,
+  Form,
+  Image,
+  Input,
+  InputNumber,
+  Modal,
+  Progress,
+  Row,
+  Select,
+  Spin,
+  Upload,
+} from 'antd';
+import { updateCategoryAsync } from 'features/categorySlice';
+import { postImageAsync } from 'features/imageSlice';
+=======
 import {
   Button,
   Col,
@@ -16,9 +34,14 @@ import {
   createCategoryAsync,
   updateCategoryAsync,
 } from 'features/categorySlice';
+>>>>>>> 26f539d22588380b662e501be62c154f4dbcdd75
 import {
   getProductAsync,
+<<<<<<< HEAD
+  getProductByIdAsync,
+=======
   createProductAsync,
+>>>>>>> 26f539d22588380b662e501be62c154f4dbcdd75
   removeProductAsync,
 } from 'features/productSlice';
 import { useGetCategory } from 'hooks/useGetCategory';
@@ -27,7 +50,11 @@ import { findIndex, get, keyBy, values } from 'lodash';
 import 'pages/Auth/styles.scss';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import RichTextEditor from 'react-rte';
 import { toast } from 'react-toastify';
+import { formatCurrency } from 'utils/formatCurrency';
+
+const { Option } = Select;
 
 import { postImageAsync } from 'features/imageSlice';
 
@@ -36,17 +63,29 @@ const { Option } = Select;
 const ProductList = () => {
   const dispatch = useDispatch();
   const [isShow, setIsShow] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
   const [formName, setFormName] = useState('add');
   const [currentId, setCurrentId] = useState(null);
   const [productListData, setProductListData] = useState({});
   const isFormAdd = formName === 'add';
+  const [images, setImages] = useState([]);
+  const [progress, setProgress] = useState(0);
+
+  const { categoryData } = useGetCategory();
+  const { colorData } = useGetColor();
+
+  const [valueRTE, setValueRTE] = useState(RichTextEditor.createEmptyValue());
 
   const { categoryData } = useGetCategory();
   const { colorData } = useGetColor();
 
   useEffect(() => {
     (async () => {
-      const getProductAction = await dispatch(getProductAsync());
+      const getProductAction = await dispatch(
+        getProductAsync({
+          populate: 'imageProductId,categoryId,colorId',
+        })
+      );
       const { results } = unwrapResult(getProductAction);
       setProductListData(keyBy(results, 'id'));
     })();
@@ -62,6 +101,10 @@ const ProductList = () => {
     setIsShow(false);
     setFormName('add');
   }, [isShow]);
+
+  const onChangeRTE = (value) => {
+    setValueRTE(value);
+  };
 
   const onUpdate = (id) => {
     onToggle();
@@ -108,30 +151,46 @@ const ProductList = () => {
   );
 
   const createProduct = useCallback(
-    async (formValue) => {
+    async (formValues) => {
       try {
-        console.log(formValue, 'formValue')
+        setIsCreating(true);
         const includeColor = findIndex(
           values(productListData),
-          (elm) => elm.productCode === formValue.productCode
+          (elm) => elm.productCode === formValues.productCode
         );
-
         if (includeColor === -1) {
-          const createAction = await dispatch(createProductAsync(formValue));
-          const data = unwrapResult(createAction);
-          setProductListData({ ...productListData, [data.id]: data });
+          const uploadAction = await dispatch(postImageAsync(images));
+          const { id } = unwrapResult(uploadAction);
+
+          const payload = {
+            ...formValues,
+            detailProduct: valueRTE.toString('html'),
+            imageProductId: id || '61a9c79a1fdf955bd74e8677',
+          };
+          const createAction = await dispatch(createProductAsync(payload));
+          const { id: idNewProduct } = unwrapResult(createAction);
+
+          const productByIdAction = await dispatch(
+            getProductByIdAsync(idNewProduct)
+          );
+          const _data = unwrapResult(productByIdAction);
+
+          setProductListData({ ...productListData, [idNewProduct]: _data });
           Promise.resolve()
             .then(onCloseModal())
             .then(toast.success('Thêm sản phẩm thành công !'));
         } else {
-          toast.error(`Sản phẩm ${formValue.includeColor} này đã tồn tại`, {
+          toast.error(`Mã sản phẩm ${formValues.productCode} này đã tồn tại`, {
             autoClose: 2000,
             theme: 'colored',
           });
         }
-      } catch (e) {}
+      } catch (e) {
+      } finally {
+        setIsCreating(false);
+      }
     },
-    [productListData, values]
+    [productListData, values, images]
   );
 
   const onFinish = (values) => {
@@ -169,20 +228,44 @@ const ProductList = () => {
     return e && e.fileList;
   };
 
-  const fileList = [];
+  const customRequest = async (options) => {
+    // return true;
+    const { onSuccess, onError, file, onProgress } = options;
 
-  const handleChange = async ({ fileList }) => {
+    // const fmData = new FormData();
+    // const accessToken = localStorage.getItem(ACCESS_TOKEN) || '';
+
+    // const config = {
+    //   headers: {
+    //     'content-type': 'multipart/form-data',
+    //     Authorization: `Bearer ${accessToken}`,
+    //   },
+    //   onUploadProgress: (event) => {
+    //     const percent = Math.floor((event.loaded / event.total) * 100);
+    //     setProgress(percent);
+    //     if (percent === 100) {
+    //       setTimeout(() => setProgress(0), 1000);
+    //     }
+    //     onProgress({ percent: (event.loaded / event.total) * 100 });
+    //   },
+    // };
+    // fmData.append('codeColor', '#b2d66b');
+    // fmData.append('images', file);
     try {
-      const formData = new FormData();
-      formData.append('codeColor', '#b2d66b');
-      fileList.forEach((image) => {
-        formData.append('images', image.originFileObj);
-      });
-
-      await dispatch(postImageAsync(formData));
-    } catch (e) {
-      console.log(e, '<----');
+      // const res = dispatch(postImageAsync(fmData, config));
+      onSuccess('Ok');
+    } catch (err) {
+      onError({ err });
     }
+  };
+
+  const handleChange = ({ fileList }) => {
+    const formData = new FormData();
+    formData.append('codeColor', '#b2d66b');
+    fileList.forEach((image) => {
+      formData.append('images', image.originFileObj);
+    });
+    setImages(formData);
   };
 
   if (isLoading) return <Spin />;
@@ -299,7 +382,7 @@ const ProductList = () => {
                 rules={[
                   { required: true, message: 'Vui lòng nhập trường này' },
                 ]}>
-                <InputNumber style={{ width: '100%' }} />
+                <InputNumber style={{ width: '100%' }} max={20} min={0} />
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -314,27 +397,45 @@ const ProductList = () => {
             </Col>
           </Row>
 
-          <Form.Item
-            label="Vật liệu"
-            name="materialProduct"
-            rules={[{ required: true, message: 'Vui lòng nhập trường này' }]}>
-            <Input />
-          </Form.Item>
+          <Row gutter={24}>
+            <Col span={12}>
+              <Form.Item
+                label="Giá tiền"
+                name="price"
+                rules={[
+                  { required: true, message: 'Vui lòng nhập trường này' },
+                ]}>
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="Vật liệu"
+                name="materialProduct"
+                rules={[
+                  { required: true, message: 'Vui lòng nhập trường này' },
+                ]}>
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <RichTextEditor value={valueRTE} onChange={onChangeRTE} />
 
           <Form.Item
-            name="images"
             label="Hình ảnh"
-            valuePropName="fileList"
             getValueFromEvent={normFile}
             rules={[{ required: true, message: 'Vui lòng nhập trường này' }]}
             extra="...">
             <Upload
+              onChange={handleChange}
+              customRequest={customRequest}
               listType="picture-card"
-              fileList={fileList}
-              // onPreview={this.handlePreview}
-              onChange={handleChange}>
-              {fileList.length >= 8 ? null : 'Tải ảnh lên'}
+              maxCount={3}
+              multiple>
+              Tải ảnh lên
             </Upload>
+            {progress > 0 ? <Progress percent={progress} /> : null}
           </Form.Item>
 
           <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
@@ -349,8 +450,13 @@ const ProductList = () => {
                 <Button
                   type="primary"
                   style={{ marginLeft: 5 }}
-                  htmlType="submit">
-                  {isFormAdd ? 'Thêm Danh mục' : 'Cập nhật'}
+                  htmlType="submit"
+                  disabled={isCreating}>
+                  {isCreating ? (
+                    <Spin />
+                  ) : (
+                    <>{isFormAdd ? 'Thêm Danh mục' : 'Cập nhật'}</>
+                  )}
                 </Button>
               </Col>
             </Row>
@@ -381,18 +487,17 @@ const ProductList = () => {
         }}>
         <Col span={1}>STT</Col>
         <Col span={3}>Tên Sản phẩm</Col>
-        <Col span={2}>Size</Col>
         <Col span={3}>Danh mục</Col>
         <Col span={3}>Giá</Col>
-        <Col span={2}>Số lượng</Col>
+        <Col span={2}>Giảm giá</Col>
         <Col span={4}>Hình ảnh</Col>
         <Col span={6}>Hành động</Col>
       </Row>
 
-      {values(productListData).map((category, idx) => {
+      {values(productListData).map((product, idx) => {
         return (
           <Row
-            key={category.id}
+            key={product.id}
             gutter={24}
             align="middle"
             justify="space-between"
@@ -401,32 +506,39 @@ const ProductList = () => {
               padding: 10,
             }}>
             <Col span={1}>{idx + 1}</Col>
-            <Col span={3}>{get(category, 'product_name', '')}</Col>
-            <Col span={2}>{get(category, 'product_size', '')}</Col>
-            <Col span={3}>{get(category, 'category', '')}</Col>
-            <Col span={3}>{get(category, 'price', '')}</Col>
-            <Col span={2}>{get(category, 'sold', '')}</Col>
+            <Col span={3}>{get(product, 'productName', '')}</Col>
+            <Col span={3}>{get(product, 'categoryId.categoryName', '')}</Col>
+            <Col span={3}>
+              {formatCurrency(get(product, 'price', 100), 'VND')}
+            </Col>
+            <Col span={2}>{get(product, 'discount', '')}%</Col>
             <Col span={4}>
-              <div>
-                <img
-                  src={get(category, 'images.url', '')}
-                  alt="img"
-                  width="100px"
-                />
-              </div>
+              <Image.PreviewGroup>
+                {get(product, 'imageProductId.images', []).map((image, idx) => {
+                  return (
+                    <Image
+                      key={idx}
+                      src={image.path}
+                      alt={image.index}
+                      width={50}
+                      height={50}
+                    />
+                  );
+                })}
+              </Image.PreviewGroup>
             </Col>
 
             <Col span={6}>
               <Row>
                 <Button
                   type="primary"
-                  onClick={() => onUpdate(get(category, 'id', ''))}>
+                  onClick={() => onUpdate(get(product, 'id', ''))}>
                   Sửa
                 </Button>
                 <Button
                   danger
                   style={{ marginLeft: 10 }}
-                  onClick={() => removeColor(get(category, 'id', ''))}>
+                  onClick={() => removeColor(get(product, 'id', ''))}>
                   Xoá
                 </Button>
               </Row>

@@ -10,7 +10,6 @@ const productApi = {
   },
 
   add(data) {
-    console.log(data, 'data')
     return axiosClient.post('/image-products', data, { isFormData: true });
   },
 
