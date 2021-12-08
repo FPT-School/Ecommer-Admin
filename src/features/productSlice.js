@@ -13,6 +13,18 @@ export const getProductAsync = createAsyncThunk(
   }
 );
 
+export const getProductByIdAsync = createAsyncThunk(
+  'get/product-by-id',
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await productApi.getById(id);
+      return response;
+    } catch (err) {
+      return rejectWithValue(err.data);
+    }
+  }
+);
+
 export const createProductAsync = createAsyncThunk(
   'create/product',
   async (payload, { rejectWithValue }) => {
