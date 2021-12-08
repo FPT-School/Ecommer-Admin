@@ -11,15 +11,15 @@ import {
   Row,
   Select,
   Spin,
-  Upload
+  Upload,
 } from 'antd';
-import { updateCategoryAsync } from 'features/categorySlice';
 import { postImageAsync } from 'features/imageSlice';
 import {
   createProductAsync,
   getProductAsync,
   getProductByIdAsync,
-  removeProductAsync
+  removeProductAsync,
+  updateProductAsync,
 } from 'features/productSlice';
 import { useGetCategory } from 'hooks/useGetCategory';
 import { useGetColor } from 'hooks/useGetColor';
@@ -43,6 +43,8 @@ const ProductList = () => {
   const isFormAdd = formName === 'add';
   const [images, setImages] = useState([]);
   const [progress, setProgress] = useState(0);
+
+  const [initialState, setInitialState] = useState({});
 
   const { categoryData } = useGetCategory();
   const { colorData } = useGetColor();
@@ -76,40 +78,62 @@ const ProductList = () => {
     setValueRTE(value);
   };
 
-  const onUpdate = (id) => {
+  const onUpdate = async (id) => {
+    const productByIdAction = await dispatch(getProductByIdAsync(id));
+    const _data = unwrapResult(productByIdAction);
+    const initialValueForm = {
+      male: _data.male,
+      discount: _data.discount,
+      price: _data.price,
+      productCode: _data.productCode,
+      productName: _data.productName,
+      size: _data.productName,
+      status: _data.status,
+      categoryId: _data.categoryId.id,
+      colorId: _data.colorId.id,
+      materialProduct: _data.materialProduct,
+    };
+
+    // setValueRTE(
+    //   React.createElement(RichTextEditor, {
+    //     value: _data.detailProduct,
+    //   })
+    // );
+
+    setInitialState(initialValueForm);
     onToggle();
     setFormName('edit');
     setCurrentId(id);
   };
 
   const updateProduct = useCallback(
-    async (formValue) => {
+    async (formValues) => {
       try {
-        const includeColor = findIndex(
-          values(productListData),
-          (elm) => elm.categoryName === formValue.categoryName
+        const uploadAction = await dispatch(postImageAsync(images));
+        const { id } = unwrapResult(uploadAction);
+
+        const data = {
+          ...formValues,
+          status: +formValues.status,
+          detailProduct: valueRTE.toString('html'),
+          imageProductId: id || '61a9c79a1fdf955bd74e8677',
+        };
+
+        const payload = { id: currentId, data };
+        const updateProductAction = await dispatch(updateProductAsync(payload));
+        const { id: currentIdProduct } = unwrapResult(updateProductAction);
+
+        const productByIdAction = await dispatch(
+          getProductByIdAsync(currentIdProduct)
         );
+        const _data = unwrapResult(productByIdAction);
 
-        if (includeColor === -1) {
-          const payload = { id: currentId, data: formValue };
-          await dispatch(updateCategoryAsync(payload));
+        productListData[currentIdProduct] = _data;
 
-          productListData[currentId] = {
-            categoryName: formValue.categoryName,
-            id: currentId,
-          };
-          setProductListData({ ...productListData });
-
-          Promise.resolve()
-            .then(onCloseModal())
-            .then(setFormName('add'))
-            .then(toast.success('Cập nhập thành công !'));
-        } else {
-          toast.error(`danh mục ${formValue.categoryName} này đã tồn tại`, {
-            autoClose: 2000,
-            theme: 'colored',
-          });
-        }
+        Promise.resolve()
+          .then(onCloseModal())
+          .then(setFormName('add'))
+          .then(toast.success('Cập nhập thành công !'));
       } catch (e) {
         toast.error(e.message, {
           autoClose: 2000,
@@ -117,18 +141,18 @@ const ProductList = () => {
         });
       }
     },
-    [productListData, currentId]
+    [productListData, currentId, images]
   );
 
   const createProduct = useCallback(
     async (formValues) => {
       try {
         setIsCreating(true);
-        const includeColor = findIndex(
+        const includeProductCode = findIndex(
           values(productListData),
           (elm) => elm.productCode === formValues.productCode
         );
-        if (includeColor === -1) {
+        if (includeProductCode === -1) {
           const uploadAction = await dispatch(postImageAsync(images));
           const { id } = unwrapResult(uploadAction);
 
@@ -199,28 +223,7 @@ const ProductList = () => {
   };
 
   const customRequest = async (options) => {
-    // return true;
     const { onSuccess, onError, file, onProgress } = options;
-
-    // const fmData = new FormData();
-    // const accessToken = localStorage.getItem(ACCESS_TOKEN) || '';
-
-    // const config = {
-    //   headers: {
-    //     'content-type': 'multipart/form-data',
-    //     Authorization: `Bearer ${accessToken}`,
-    //   },
-    //   onUploadProgress: (event) => {
-    //     const percent = Math.floor((event.loaded / event.total) * 100);
-    //     setProgress(percent);
-    //     if (percent === 100) {
-    //       setTimeout(() => setProgress(0), 1000);
-    //     }
-    //     onProgress({ percent: (event.loaded / event.total) * 100 });
-    //   },
-    // };
-    // fmData.append('codeColor', '#b2d66b');
-    // fmData.append('images', file);
     try {
       // const res = dispatch(postImageAsync(fmData, config));
       onSuccess('Ok');
@@ -239,6 +242,7 @@ const ProductList = () => {
   };
 
   if (isLoading) return <Spin />;
+
   return (
     <>
       <Modal
@@ -248,7 +252,10 @@ const ProductList = () => {
         footer={null}>
         <Form
           name="basic"
-          initialValues={{ remember: true }}
+          initialValues={{
+            ...initialState,
+            remember: true,
+          }}
           onFinish={onFinish}
           layout="vertical"
           autoComplete="true">
@@ -333,6 +340,7 @@ const ProductList = () => {
               <Form.Item
                 label="Trạng thái"
                 name="status"
+                defaultValue="0"
                 rules={[
                   { required: true, message: 'Vui lòng nhập trường này' },
                 ]}>
