@@ -7,26 +7,29 @@ import {
   Input,
   InputNumber,
   Modal,
-  Progress,
+  Pagination,
   Row,
   Select,
   Spin,
   Upload,
 } from 'antd';
+import qs from 'query-string';
+import { LIMIT } from 'config';
 import { postImageAsync } from 'features/imageSlice';
 import {
   createProductAsync,
-  getProductAsync,
   getProductByIdAsync,
   removeProductAsync,
   updateProductAsync,
 } from 'features/productSlice';
 import { useGetCategory } from 'hooks/useGetCategory';
 import { useGetColor } from 'hooks/useGetColor';
-import { findIndex, get, keyBy, values } from 'lodash';
+import { useGetProduct } from 'hooks/useGetProduct';
+import { findIndex, get, values } from 'lodash';
 import 'pages/Auth/styles.scss';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useHistory, useRouteMatch, useLocation } from 'react-router';
 import RichTextEditor from 'react-rte';
 import { toast } from 'react-toastify';
 import { formatCurrency } from 'utils/formatCurrency';
@@ -35,91 +38,133 @@ const { Option } = Select;
 
 const ProductList = () => {
   const dispatch = useDispatch();
+  const history = useHistory();
+  const location = useLocation();
+  const match = useRouteMatch();
+
+  const [form] = Form.useForm();
+
   const [isShow, setIsShow] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [isGetDetail, setIsGetDetail] = useState(false);
   const [formName, setFormName] = useState('add');
   const [currentId, setCurrentId] = useState(null);
-  const [productListData, setProductListData] = useState({});
   const isFormAdd = formName === 'add';
-  const [images, setImages] = useState([]);
-  const [progress, setProgress] = useState(0);
-
-  const [initialState, setInitialState] = useState({});
+  const [images, setImages] = useState(null);
+  const [fileList, setFileList] = useState(null);
+  const [idCollectImage, setIdCollectImage] = useState(null);
+  const [dataUpdate, setDataUpdate] = useState({});
 
   const { categoryData } = useGetCategory();
   const { colorData } = useGetColor();
 
   const [valueRTE, setValueRTE] = useState(RichTextEditor.createEmptyValue());
 
-  useEffect(() => {
-    (async () => {
-      const getProductAction = await dispatch(
-        getProductAsync({
-          populate: 'imageProductId,categoryId,colorId',
-        })
-      );
-      const { results } = unwrapResult(getProductAction);
-      setProductListData(keyBy(results, 'id'));
-    })();
-  }, []);
+  const { page, total, isFetchData, productListData, setProductListData } =
+    useGetProduct();
 
   const { isLoading } = useSelector((state) => state.category);
 
   const onToggle = useCallback(() => {
+    form.setFieldsValue({});
+    setFileList(null);
+    setValueRTE(RichTextEditor.createEmptyValue());
     setIsShow(!isShow);
-  }, [isShow]);
+  }, [isShow, form, fileList, valueRTE]);
 
-  const onCloseModal = useCallback(() => {
+  const onCloseModal = () => {
+    form.resetFields();
     setIsShow(false);
     setFormName('add');
-  }, [isShow]);
+  };
 
   const onChangeRTE = (value) => {
     setValueRTE(value);
   };
 
   const onUpdate = async (id) => {
-    const productByIdAction = await dispatch(getProductByIdAsync(id));
-    const _data = unwrapResult(productByIdAction);
-    const initialValueForm = {
-      male: _data.male,
-      discount: _data.discount,
-      price: _data.price,
-      productCode: _data.productCode,
-      productName: _data.productName,
-      size: _data.productName,
-      status: _data.status,
-      categoryId: _data.categoryId.id,
-      colorId: _data.colorId.id,
-      materialProduct: _data.materialProduct,
-    };
+    try {
+      setIsGetDetail(true);
+      const productByIdAction = await dispatch(getProductByIdAsync(id));
+      const _data = unwrapResult(productByIdAction);
+      const initialValueForm = {
+        male: _data.male + '',
+        discount: _data.discount,
+        price: _data.price,
+        productCode: _data.productCode,
+        productName: _data.productName,
+        size: _data.size,
+        status: _data.status + '',
+        categoryId: get(_data, "categoryId.id", ""),
+        colorId: get(_data, "colorId.id", ""),
+        materialProduct: _data.materialProduct,
+      };
 
-    // setValueRTE(
-    //   React.createElement(RichTextEditor, {
-    //     value: _data.detailProduct,
-    //   })
-    // );
+      form.setFieldsValue(initialValueForm);
+      onToggle(true);
+      setFormName('edit');
+      setCurrentId(id);
 
-    setInitialState(initialValueForm);
-    onToggle();
-    setFormName('edit');
-    setCurrentId(id);
+      setIdCollectImage(
+        get(_data, 'imageProductId.id', '61a9c79a1fdf955bd74e8677')
+      );
+
+      setFileList(null);
+
+      // setFileList(() => {
+      //   const _fileList = [];
+      //   get(_data, 'imageProductId.images', []).map((item, idx) => {
+      //     _fileList.push({
+      //       uid: idx,
+      //       name: 'image.png',
+      //       status: 'done',
+      //       url: item.path,
+      //     });
+      //   });
+      //   return _fileList;
+      // });
+    } finally {
+      setIsGetDetail(false);
+    }
+  };
+
+  const checkDataUpdate = (formValues) => {
+    return new Promise(async (resolve, reject) => {
+      if (images) {
+        console.log('has image');
+        const uploadAction = await dispatch(postImageAsync(images));
+        const { id } = unwrapResult(uploadAction);
+        Promise.resolve()
+          .then(setIdCollectImage(id))
+          .then(() => {
+            const data = {
+              ...formValues,
+              status: +formValues.status,
+              detailProduct: valueRTE.toString('html'),
+              imageProductId: id || '61a9c79a1fdf955bd74e8677',
+            };
+            setDataUpdate(data);
+            resolve(data);
+          });
+      } else {
+        const data = {
+          ...formValues,
+          status: +formValues.status,
+          detailProduct: valueRTE.toString('html'),
+          imageProductId: idCollectImage || '61a9c79a1fdf955bd74e8677',
+        };
+        setDataUpdate(data);
+        resolve(data);
+      }
+    });
   };
 
   const updateProduct = useCallback(
     async (formValues) => {
       try {
-        const uploadAction = await dispatch(postImageAsync(images));
-        const { id } = unwrapResult(uploadAction);
-
-        const data = {
-          ...formValues,
-          status: +formValues.status,
-          detailProduct: valueRTE.toString('html'),
-          imageProductId: id || '61a9c79a1fdf955bd74e8677',
-        };
-
-        const payload = { id: currentId, data };
+        setIsCreating(true);
+        const _dataUpdate = await checkDataUpdate(formValues);
+        const payload = { id: currentId, data: _dataUpdate };
         const updateProductAction = await dispatch(updateProductAsync(payload));
         const { id: currentIdProduct } = unwrapResult(updateProductAction);
 
@@ -139,6 +184,8 @@ const ProductList = () => {
           autoClose: 2000,
           theme: 'colored',
         });
+      } finally {
+        setIsCreating(false);
       }
     },
     [productListData, currentId, images]
@@ -153,15 +200,9 @@ const ProductList = () => {
           (elm) => elm.productCode === formValues.productCode
         );
         if (includeProductCode === -1) {
-          const uploadAction = await dispatch(postImageAsync(images));
-          const { id } = unwrapResult(uploadAction);
-
-          const payload = {
-            ...formValues,
-            detailProduct: valueRTE.toString('html'),
-            imageProductId: id || '61a9c79a1fdf955bd74e8677',
-          };
-          const createAction = await dispatch(createProductAsync(payload));
+          const _dataUpdate = await checkDataUpdate(formValues);
+          // create product with payload body
+          const createAction = await dispatch(createProductAsync(_dataUpdate));
           const { id: idNewProduct } = unwrapResult(createAction);
 
           const productByIdAction = await dispatch(
@@ -213,12 +254,9 @@ const ProductList = () => {
   );
 
   const normFile = (e) => {
-    console.log('Upload event:', e);
-
     if (Array.isArray(e)) {
       return e;
     }
-
     return e && e.fileList;
   };
 
@@ -241,19 +279,37 @@ const ProductList = () => {
     setImages(formData);
   };
 
-  if (isLoading) return <Spin />;
+  // const handleRemoveImage = (fileId) => {
+  //   const newFileList = fileList.filter((item) => item.uid !== fileId);
+  //   setFileList(newFileList);
+  // };
+
+  const handleChangePage = (page) => {
+    history.push(`${match.url}?page=${page}`);
+  };
+
+  const handleSort = (query) => {
+    const params = qs.stringify(qs.parse(query));
+    // history.push(`${match.url}${query}`);
+    history.replace({ pathname: location.pathname, search: params });
+  };
+
+  if (isFetchData) return <Spin />;
 
   return (
     <>
       <Modal
+        style={{ position: 'relative' }}
         title={isFormAdd ? 'Thêm sản phẩm' : 'Cập nhập sản phẩm'}
         visible={isShow}
         onCancel={onCloseModal}
         footer={null}>
+        <div>{isGetDetail && <Spin />}</div>
+
         <Form
+          form={form}
           name="basic"
           initialValues={{
-            ...initialState,
             remember: true,
           }}
           onFinish={onFinish}
@@ -291,8 +347,8 @@ const ProductList = () => {
                   { required: true, message: 'Vui lòng nhập trường này' },
                 ]}>
                 <Select placeholder="Chọn giới tính">
-                  <Option value="0">Nam</Option>
-                  <Option value="1">Nữ</Option>
+                  <Option value="0">Nữ</Option>
+                  <Option value="1">Nam</Option>
                   <Option value="other">Khác</Option>
                 </Select>
               </Form.Item>
@@ -405,7 +461,20 @@ const ProductList = () => {
             getValueFromEvent={normFile}
             rules={[{ required: true, message: 'Vui lòng nhập trường này' }]}
             extra="...">
+            {/* <Row gutter={24}>
+              {(fileList || []).map((file) => (
+                <Col span={8}>
+                  <Image src={file.url} width={100} height={100} />
+                  <div
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => handleRemoveImage(file.uid)}>
+                    <DeleteOutlined />
+                  </div>
+                </Col>
+              ))}
+            </Row> */}
             <Upload
+              // showUploadList={false}
               onChange={handleChange}
               customRequest={customRequest}
               listType="picture-card"
@@ -413,13 +482,12 @@ const ProductList = () => {
               multiple>
               Tải ảnh lên
             </Upload>
-            {progress > 0 ? <Progress percent={progress} /> : null}
           </Form.Item>
 
           <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
             <Row align="middle" justify="end">
               <Col>
-                <Button type="default" onClick={onToggle}>
+                <Button type="default" onClick={onToggle} disabled={isCreating}>
                   Huỷ bỏ
                 </Button>
               </Col>
@@ -447,11 +515,41 @@ const ProductList = () => {
         align="middle"
         justify="space-between"
         style={{ paddingBottom: 10 }}>
-        <Col></Col>
         <Col>
           <Button type="primary" onClick={onToggle}>
             Thêm sản phẩm
           </Button>
+        </Col>
+        <Col>
+          <Col xs={4}>
+            <Select
+              style={{ width: 200 }}
+              defaultValue="sortBy=price:desc"
+              onChange={handleSort}>
+              {[
+                {
+                  label: 'Giá từ cao',
+                  value: 'sortBy=price:desc',
+                },
+                {
+                  label: 'Giá từ thấp',
+                  value: 'sortBy=price:asc',
+                },
+                {
+                  label: 'Giới tính Nữ',
+                  value: 'male=0',
+                },
+                {
+                  label: 'Giới tính Nam',
+                  value: 'male=1',
+                },
+              ].map(({ label, value }, idx) => (
+                <Option key={idx} value={value}>
+                  {label}
+                </Option>
+              ))}
+            </Select>
+          </Col>
         </Col>
       </Row>
 
@@ -524,6 +622,15 @@ const ProductList = () => {
           </Row>
         );
       })}
+
+      <div style={{ paddingTop: 10 }}>
+        <Pagination
+          current={+page}
+          total={total}
+          pageSize={LIMIT}
+          onChange={handleChangePage}
+        />
+      </div>
     </>
   );
 };
