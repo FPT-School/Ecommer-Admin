@@ -1,4 +1,6 @@
+import { UploadOutlined } from '@ant-design/icons';
 import { unwrapResult } from '@reduxjs/toolkit';
+<<<<<<< HEAD
 import {
   Button,
   Col,
@@ -15,10 +17,31 @@ import {
 } from 'antd';
 import { updateCategoryAsync } from 'features/categorySlice';
 import { postImageAsync } from 'features/imageSlice';
+=======
 import {
-  createProductAsync,
+  Button,
+  Col,
+  Form,
+  Input,
+  InputNumber,
+  Modal,
+  Row,
+  Select,
+  Spin,
+  Upload,
+} from 'antd';
+import {
+  createCategoryAsync,
+  updateCategoryAsync,
+} from 'features/categorySlice';
+>>>>>>> 26f539d22588380b662e501be62c154f4dbcdd75
+import {
   getProductAsync,
+<<<<<<< HEAD
   getProductByIdAsync,
+=======
+  createProductAsync,
+>>>>>>> 26f539d22588380b662e501be62c154f4dbcdd75
   removeProductAsync,
 } from 'features/productSlice';
 import { useGetCategory } from 'hooks/useGetCategory';
@@ -30,6 +53,10 @@ import { useDispatch, useSelector } from 'react-redux';
 import RichTextEditor from 'react-rte';
 import { toast } from 'react-toastify';
 import { formatCurrency } from 'utils/formatCurrency';
+
+const { Option } = Select;
+
+import { postImageAsync } from 'features/imageSlice';
 
 const { Option } = Select;
 
@@ -48,6 +75,9 @@ const ProductList = () => {
   const { colorData } = useGetColor();
 
   const [valueRTE, setValueRTE] = useState(RichTextEditor.createEmptyValue());
+
+  const { categoryData } = useGetCategory();
+  const { colorData } = useGetColor();
 
   useEffect(() => {
     (async () => {
@@ -150,7 +180,7 @@ const ProductList = () => {
             .then(onCloseModal())
             .then(toast.success('Thêm sản phẩm thành công !'));
         } else {
-          toast.error(`Sản phẩm ${formValues.productCode} này đã tồn tại`, {
+          toast.error(`Mã sản phẩm ${formValues.productCode} này đã tồn tại`, {
             autoClose: 2000,
             theme: 'colored',
           });
