@@ -25,7 +25,8 @@ export const useGetUser = () => {
         );
         const { totalResults, results } = unwrapResult(action);
         setTotal(totalResults);
-        setUserData(keyBy(results, 'id'));
+        const accountByRoleUser = results.filter((item) => item.role !== 'admin');
+        setUserData(keyBy(accountByRoleUser, 'id'));
       } finally {
         setIsLoading(false);
       }
