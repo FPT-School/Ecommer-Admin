@@ -2,6 +2,8 @@ import React from 'react';
 import StatusCard from '../components/status-card/StatusCard';
 import statusCards from '../assets/JsonData/status-card-data.json';
 import Chart from 'react-apexcharts';
+import { useGetUser } from 'hooks/useGetUser';
+import { useGetOrder } from 'hooks/useGetOrder';
 
 const chartOptions = {
   series: [
@@ -48,13 +50,38 @@ const chartOptions = {
 };
 
 const Dashboard = () => {
+  const { total: _totalUser } = useGetUser();
+  const { total: _totalOrder } = useGetOrder();
+
+  const data = [
+    {
+      icon: 'bx bx-user',
+      count: _totalUser,
+      title: 'Số lượng người dùng',
+    },
+    {
+      icon: 'bx bx-cart',
+      count: '2,001',
+      title: 'Đơn hàng',
+    },
+    {
+      icon: 'bx bx-dollar-circle',
+      count: '$2,632',
+      title: 'Tổng thu nhập',
+    },
+    {
+      icon: 'bx bx-receipt',
+      count: _totalOrder,
+      title: 'Tổng Orders',
+    },
+  ];
   return (
     <div>
       <h2 className="page-header">Tổng quan </h2>
       <div className="row">
         <div className="col-6">
           <div className="row">
-            {statusCards.map((item, index) => (
+            {data.map((item, index) => (
               <div className="col-6" key={index}>
                 {item.title}
                 <StatusCard
