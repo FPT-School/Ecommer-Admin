@@ -1,80 +1,85 @@
 import { unwrapResult } from '@reduxjs/toolkit';
-import { Button, Col, Form, Input, Modal, Row, Spin } from 'antd';
+import {
+  Button,
+  Col,
+  Form,
+  Input,
+  Modal,
+  Pagination,
+  Row,
+  Select,
+  Spin,
+} from 'antd';
+import { LIMIT } from 'config';
 import {
   createCategoryAsync,
-  getCategoryAsync,
+  getByIdAsync,
   removeCategoryAsync,
   updateCategoryAsync,
 } from 'features/categorySlice';
-import { findIndex, get, keyBy, values } from 'lodash';
+import { useGetCategory } from 'hooks/useGetCategory';
+import { findIndex, get, values } from 'lodash';
 import 'pages/Auth/styles.scss';
-import React, { useCallback, useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import qs from 'query-string';
+import React, { useCallback, useState } from 'react';
+import { useDispatch } from 'react-redux';
+import { useHistory, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
+const { Option } = Select;
 
 const Category = () => {
   const dispatch = useDispatch();
+  const location = useLocation();
+  const history = useHistory();
+
   const [isShow, setIsShow] = useState(false);
   const [formName, setFormName] = useState('add');
   const [currentId, setCurrentId] = useState(null);
-  const [categoryData, setCategoryData] = useState({});
-
-
+  const [form] = Form.useForm();
   const isFormAdd = formName === 'add';
 
-  useEffect(() => {
-    (async () => {
-      const getCategoryAction = await dispatch(getCategoryAsync());
-      const { results } = unwrapResult(getCategoryAction);
-      setCategoryData(keyBy(results, 'id'));
-    })();
-  }, []);
-
-  const { isLoading } = useSelector((state) => state.category);
+  const { isLoading, page, total, categoryData, setCategoryData } =
+    useGetCategory();
 
   const onToggle = useCallback(() => {
+    form.setFieldsValue({});
     setIsShow(!isShow);
-  }, [isShow]);
+  }, [form, isShow]);
 
   const onCloseModal = useCallback(() => {
+    form.resetFields();
     setIsShow(false);
     setFormName('add');
-  }, [isShow]);
+  }, [form, isShow]);
 
-  const onUpdate = (id) => {
+  const onUpdate = async (id) => {
     onToggle();
     setFormName('edit');
     setCurrentId(id);
+    const getByIdAction = await dispatch(getByIdAsync(id));
+    const _data = unwrapResult(getByIdAction);
+    form.setFieldsValue({
+      categoryName: _data.categoryName,
+      male: _data.male,
+    });
   };
 
-  const updateColor = useCallback(
+  const updateCategory = useCallback(
     async (formValue) => {
       try {
-        const includeColor = findIndex(
-          values(categoryData),
-          (elm) => elm.categoryName === formValue.categoryName
-        );
+        const payload = { id: currentId, data: formValue };
+        await dispatch(updateCategoryAsync(payload));
 
-        if (includeColor === -1) {
-          const payload = { id: currentId, data: formValue };
-          await dispatch(updateCategoryAsync(payload));
+        categoryData[currentId] = {
+          categoryName: formValue.categoryName,
+          id: currentId,
+        };
+        setCategoryData({ ...categoryData });
 
-          categoryData[currentId] = {
-            categoryName: formValue.categoryName,
-            id: currentId,
-          };
-          setCategoryData({ ...categoryData });
-
-          Promise.resolve()
-            .then(onCloseModal())
-            .then(setFormName('add'))
-            .then(toast.success('Cập nhập thành công !'));
-        } else {
-          toast.error(`danh mục ${formValue.categoryName} này đã tồn tại`, {
-            autoClose: 2000,
-            theme: 'colored',
-          });
-        }
+        Promise.resolve()
+          .then(onCloseModal())
+          .then(setFormName('add'))
+          .then(toast.success('Cập nhập thành công !'));
       } catch (e) {
         toast.error(e.message, {
           autoClose: 2000,
@@ -85,7 +90,7 @@ const Category = () => {
     [categoryData, currentId]
   );
 
-  const createColor = useCallback(
+  const createCategory = useCallback(
     async (formValue) => {
       try {
         const includeColor = findIndex(
@@ -96,7 +101,7 @@ const Category = () => {
         if (includeColor === -1) {
           const createAction = await dispatch(createCategoryAsync(formValue));
           const data = unwrapResult(createAction);
-          setCategoryData({ ...categoryData, [data.id]: data });
+          setCategoryData({ [data.id]: data , ...categoryData });
           Promise.resolve()
             .then(onCloseModal())
             .then(toast.success('Thêm danh mục thành công !'));
@@ -113,13 +118,13 @@ const Category = () => {
 
   const onFinish = (values) => {
     if (formName === 'add') {
-      createColor(values);
+      createCategory(values);
     } else {
-      updateColor(values);
+      updateCategory(values);
     }
   };
 
-  const removeColor = useCallback(
+  const removeCategory = useCallback(
     async (id) => {
       try {
         await dispatch(removeCategoryAsync(id));
@@ -136,6 +141,12 @@ const Category = () => {
     [categoryData]
   );
 
+  const handleChangePage = (page) => {
+    const query = qs.parse(location.search);
+    const newParams = qs.stringify({ ...query, page });
+    history.replace({ pathname: location.pathname, search: newParams });
+  };
+
   if (isLoading) return <Spin />;
   return (
     <>
@@ -145,6 +156,7 @@ const Category = () => {
         onCancel={onCloseModal}
         footer={null}>
         <Form
+          form={form}
           name="basic"
           initialValues={{ remember: true }}
           onFinish={onFinish}
@@ -155,6 +167,17 @@ const Category = () => {
             name="categoryName"
             rules={[{ required: true, message: 'Vui lòng nhập tên danh mục' }]}>
             <Input placeholder="Tên danh mục..." />
+          </Form.Item>
+
+          <Form.Item
+            name="male"
+            label="Giới tính"
+            rules={[{ required: true, message: 'Vui lòng nhập trường này' }]}>
+            <Select placeholder="Chọn giới tính">
+              <Option value={0}>Nữ</Option>
+              <Option value={1}>Nam</Option>
+              <Option value={2}>Khác</Option>
+            </Select>
           </Form.Item>
 
           <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
@@ -228,7 +251,7 @@ const Category = () => {
                 <Button
                   danger
                   style={{ marginLeft: 10 }}
-                  onClick={() => removeColor(get(category, 'id', ''))}>
+                  onClick={() => removeCategory(get(category, 'id', ''))}>
                   Xoá
                 </Button>
               </Row>
@@ -236,6 +259,15 @@ const Category = () => {
           </Row>
         );
       })}
+
+      <div style={{ paddingTop: 10 }}>
+        <Pagination
+          current={+page}
+          total={total}
+          pageSize={LIMIT}
+          onChange={handleChangePage}
+        />
+      </div>
     </>
   );
 };

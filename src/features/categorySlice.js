@@ -3,9 +3,20 @@ import categoryApi from 'apis/categoryApi';
 
 export const getCategoryAsync = createAsyncThunk(
   'get/category',
-  async (payload, { rejectWithValue }) => {
+  async (params, { rejectWithValue }) => {
     try {
-      const response = await categoryApi.get();
+      const response = await categoryApi.get(params);
+      return response;
+    } catch (err) {
+      return rejectWithValue(err.data);
+    }
+  }
+);
+export const getByIdAsync = createAsyncThunk(
+  'getById/category',
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await categoryApi.getById(id);
       return response;
     } catch (err) {
       return rejectWithValue(err.data);

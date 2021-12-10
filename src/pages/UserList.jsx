@@ -19,6 +19,8 @@ const UserList = () => {
   const { page, total, isLoading, userData, setUserData } = useGetUser();
   const isFormAdd = formName === 'add';
 
+    // eslint-disable-next-line no-console
+  console.log(total, '<----');
   const onToggle = useCallback(() => {
     setIsShow(!isShow);
   }, [isShow]);

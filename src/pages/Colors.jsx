@@ -1,6 +1,7 @@
 import { Button, Col, Form, Input, Modal, Row, Spin, Table } from 'antd';
 
 import {
+  getByIdAsync,
   getColorAsync,
   createColorAsync,
   removeColorAsync,
@@ -35,55 +36,40 @@ const Colors = () => {
   const { isLoading } = useSelector((state) => state.color);
 
   const onToggle = useCallback(() => {
+    form.setFieldsValue({});
     setIsShow(!isShow);
-  }, [isShow]);
+  }, [form, isShow]);
 
   const onCloseModal = useCallback(() => {
     setIsShow(false);
     setFormName('add');
     form.resetFields();
-  }, [isShow]);
+  }, [form, isShow]);
 
-  const onUpdate = (id) => {
+  const onUpdate = async (id) => {
     onToggle();
+    const getByIdAction = await dispatch(getByIdAsync(id));
+    const _data = unwrapResult(getByIdAction);
+    form.setFieldsValue(_data);
     setFormName('edit');
     setCurrentId(id);
   };
 
   const updateColor = useCallback(
     async (formValue) => {
-      try {
-        const includeColor = findIndex(
-          values(colorData),
-          (elm) => elm.colorHex === formValue.colorHex
-        );
+      const payload = { id: currentId, data: formValue };
+      await dispatch(updateColorAsync(payload));
 
-        if (includeColor === -1) {
-          const payload = { id: currentId, data: formValue };
-          await dispatch(updateColorAsync(payload));
+      colorData[currentId] = {
+        colorHex: formValue.colorHex,
+        id: currentId,
+      };
+      setColorData({ ...colorData });
 
-          colorData[currentId] = {
-            colorHex: formValue.colorHex,
-            id: currentId,
-          };
-          setColorData({ ...colorData });
-
-          Promise.resolve()
-            .then(onCloseModal())
-            .then(setFormName('add'))
-            .then(toast.success('Cập nhập thành công !'));
-        } else {
-          toast.error(`Màu ${formValue.colorHex} này đã tồn tại`, {
-            autoClose: 2000,
-            theme: 'colored',
-          });
-        }
-      } catch (e) {
-        toast.error(e.message, {
-          autoClose: 2000,
-          theme: 'colored',
-        });
-      }
+      Promise.resolve()
+        .then(onCloseModal())
+        .then(setFormName('add'))
+        .then(toast.success('Cập nhập thành công !'));
     },
     [colorData, currentId]
   );
