@@ -4,6 +4,9 @@ const colorApi = {
   get() {
     return axiosClient.get('/colors');
   },
+  getById(id) {
+    return axiosClient.get(`/colors/${id}`);
+  },
   add(data) {
     return axiosClient.post('/colors', data);
   },

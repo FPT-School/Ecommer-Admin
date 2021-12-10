@@ -13,6 +13,18 @@ export const getColorAsync = createAsyncThunk(
   }
 );
 
+export const getByIdAsync = createAsyncThunk(
+  'getById/colors',
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await colorApi.getById(id);
+      return response;
+    } catch (err) {
+      return rejectWithValue(err.data);
+    }
+  }
+);
+
 export const createColorAsync = createAsyncThunk(
   'create/colors',
   async (payload, { rejectWithValue }) => {

@@ -1,137 +1,146 @@
-import { Button, Col, Form, Input, Modal, Row, Spin, Pagination } from 'antd';
+import {
+  Button,
+  Col,
+  Form,
+  Image,
+  Input,
+  Modal,
+  Pagination,
+  Row,
+  Spin,
+  Typography,
+} from 'antd';
 import { LIMIT } from 'config';
 import { deleteUserAsync, updateUserAsync } from 'features/userSlice';
-import { useGetOrder } from 'hooks/useGetOrder';
-import { useGetUser } from 'hooks/useGetUser';
+import { getByIdAsync } from 'features/orderItem';
+import { useGetOrderItem } from 'hooks/useGetOrderItem';
 import { findIndex, get, values } from 'lodash';
 import 'pages/Auth/styles.scss';
 import React, { useCallback, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { useHistory, useRouteMatch } from 'react-router';
 import { toast } from 'react-toastify';
+import { formatCurrency } from 'utils/formatCurrency';
+import { unwrapResult } from '@reduxjs/toolkit';
 
 const OrderList = () => {
   const dispatch = useDispatch();
   const history = useHistory();
   const match = useRouteMatch();
   const [isShow, setIsShow] = useState(false);
-  const [formName, setFormName] = useState('add');
-  const [currentId, setCurrentId] = useState(null);
-  const { page, total, isLoading, orderData, setOrderData } = useGetOrder();
-  const isFormAdd = formName === 'add';
+  const [isLoading, setIsLoading] = useState(false);
 
-  const onToggle = useCallback(() => {
-    setIsShow(!isShow);
-  }, [isShow]);
+  const [currentOrder, setCurrentOrder] = useState(null);
+  const {
+    page,
+    total,
+    isLoading: isFetchOrder,
+    orderItemData,
+  } = useGetOrderItem();
 
   const onCloseModal = useCallback(() => {
     setIsShow(false);
-    setFormName('add');
   }, [isShow]);
 
-  const updateColor = useCallback(
-    async (formValue) => {
-      try {
-        const includeColor = findIndex(
-          values(orderData),
-          (elm) => elm.categoryName === formValue.categoryName
-        );
-
-        if (includeColor === -1) {
-          const payload = { id: currentId, data: formValue };
-          await dispatch(updateUserAsync(payload));
-
-          orderData[currentId] = {
-            categoryName: formValue.categoryName,
-            id: currentId,
-          };
-          setOrderData({ ...orderData });
-
-          Promise.resolve()
-            .then(onCloseModal())
-            .then(setFormName('add'))
-            .then(toast.success('Cập nhập thành công !'));
-        } else {
-          toast.error(`danh mục ${formValue.categoryName} này đã tồn tại`, {
-            autoClose: 2000,
-            theme: 'colored',
-          });
-        }
-      } catch (e) {
-        toast.error(e.message, {
-          autoClose: 2000,
-          theme: 'colored',
-        });
-      }
-    },
-    [orderData, currentId]
-  );
-
-  const onFinish = (values) => {
-    updateColor(values);
+  const onShowDetail = async (id) => {
+    try {
+      setIsLoading(true);
+      const getByIdAction = await dispatch(getByIdAsync(id));
+      const _data = unwrapResult(getByIdAction);
+      setCurrentOrder(_data);
+    } finally {
+      setIsShow(true);
+      setIsLoading(false);
+    }
   };
-
-  const deleteUser = useCallback(
-    async (id) => {
-      try {
-        await dispatch(deleteUserAsync(id));
-        delete orderData[id];
-        setOrderData({ ...orderData });
-        toast.success('Xoá tài khoản thành công !');
-      } catch (e) {
-        toast.error(e.message, {
-          autoClose: 2000,
-          theme: 'colored',
-        });
-      }
-    },
-    [orderData]
-  );
 
   const handleChange = (page) => {
     history.push(`${match.url}?page=${page}`);
   };
 
-  if (isLoading) return <Spin />;
+  if (isFetchOrder) return <Spin />;
   return (
     <>
       <Modal
-        title={isFormAdd ? 'Thêm danh mục sản phẩm' : 'Cập nhập danh mục'}
+        width={1400}
+        title={'Chi tiết order'}
         visible={isShow}
         onCancel={onCloseModal}
         footer={null}>
-        <Form
-          name="basic"
-          initialValues={{ remember: true }}
-          onFinish={onFinish}
-          layout="vertical"
-          autoComplete="off">
-          <Form.Item
-            label="Tên danh mục"
-            name="categoryName"
-            rules={[{ required: true, message: 'Vui lòng nhập tên danh mục' }]}>
-            <Input placeholder="Tên danh mục..." />
-          </Form.Item>
+        <Row
+          gutter={24}
+          align="middle"
+          justify="space-between"
+          style={{
+            background: '#FAFAFA',
+            padding: 10,
+          }}>
+          <Col span={2}>STT</Col>
+          <Col span={2}> Mã Sản phẩm</Col>
+          <Col span={3}> Tên sản phẩm</Col>
+          <Col span={4}> Giá tiền</Col>
+          <Col span={3}> Giảm giá</Col>
+          <Col span={4}> Hình ảnh</Col>
+          <Col span={6}> Tình trạng </Col>
+        </Row>
 
-          <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
-            <Row align="middle" justify="end">
-              <Col>
-                <Button type="default" onClick={onToggle}>
-                  Huỷ bỏ
-                </Button>
+        {get(currentOrder, 'product', []).map((product, idx) => {
+          return (
+            <Row
+              key={product.id}
+              gutter={24}
+              align="middle"
+              justify="space-between"
+              style={{
+                background: '#FAFAFA',
+                padding: 10,
+              }}>
+              <Col span={2}>{idx + 1}</Col>
+              <Col span={2}> {get(product, 'productId.productCode', '')}</Col>
+              <Col span={3}> {get(product, 'productId.productName', '')}</Col>
+              <Col span={4}>
+                {formatCurrency(
+                  (product.productId.price -
+                    (product.productId.price * product.productId.discount) /
+                      100) *
+                    product.quantity,
+                  'VND'
+                )}
               </Col>
-
-              <Col>
-                <Button
-                  type="primary"
-                  style={{ marginLeft: 5 }}
-                  htmlType="submit">
-                  Cập nhật
-                </Button>
+              <Col span={3}> {product.productId.discount} %</Col>
+              <Col span={4}>
+                <Image.PreviewGroup>
+                  {get(product, 'productId.imageProductId.images', []).map(
+                    (image, idx) => {
+                      return (
+                        <Image
+                          key={idx}
+                          src={image.path}
+                          alt={image.index}
+                          width={50}
+                          height={50}
+                        />
+                      );
+                    }
+                  )}
+                </Image.PreviewGroup>
+              </Col>
+              <Col span={6}>
+                {
+                  { 0: 'Chưa giao hàng', 1: 'Đã giao hàng' }[
+                    product.productId.status
+                  ]
+                }
               </Col>
             </Row>
-          </Form.Item>
-        </Form>
+          );
+        })}
+
+        <Row justify="end">
+          <Typography.Title level={4}>
+            {formatCurrency(get(currentOrder, 'unitPrice', ''), 'VND')}
+          </Typography.Title>
+        </Row>
       </Modal>
 
       <Row
@@ -143,16 +152,15 @@ const OrderList = () => {
           padding: 10,
         }}>
         <Col span={2}>STT</Col>
-        <Col span={5}> Email</Col>
-        <Col span={5}> Địa chỉ</Col>
-        <Col span={6}> Số điện thoại</Col>
+        <Col span={5}> Mã Order</Col>
+        <Col span={5}> Số tiền</Col>
         <Col span={6}> Hành động khác</Col>
       </Row>
 
-      {values(orderData).map((user, idx) => {
+      {values(orderItemData).map((order, idx) => {
         return (
           <Row
-            key={user.id}
+            key={order.id}
             gutter={24}
             align="middle"
             justify="space-between"
@@ -161,21 +169,17 @@ const OrderList = () => {
               padding: 10,
             }}>
             <Col span={2}>{idx + 1}</Col>
-            <Col span={5}>{get(user, 'email', '')}</Col>
-            <Col span={5}>{get(user, 'address', '')}</Col>
-            <Col span={6}>{get(user, 'phoneNumber', '')}</Col>
+            <Col span={5}>{get(order, 'id', '').substring(10, 3)}</Col>
+            <Col span={5}>
+              {formatCurrency(get(order, 'unitPrice', '000'), 'VND')}
+            </Col>
             <Col span={6}>
               <Row>
-                {/* <Button
-                  type="primary"
-                  onClick={() => onUpdate(get(user, 'id', ''))}>
-                  Sửa
-                </Button> */}
                 <Button
                   danger
                   style={{ marginLeft: 10 }}
-                  onClick={() => deleteUser(get(user, 'id', ''))}>
-                  Xoá
+                  onClick={() => onShowDetail(get(order, 'id', ''))}>
+                  Xem chi tiết
                 </Button>
               </Row>
             </Col>

@@ -64,8 +64,6 @@ const ProductList = () => {
   const { page, total, isFetchData, productListData, setProductListData } =
     useGetProduct();
 
-  const { isLoading } = useSelector((state) => state.category);
-
   const onToggle = useCallback(() => {
     form.setFieldsValue({});
     setFileList(null);

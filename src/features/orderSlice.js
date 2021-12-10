@@ -2,7 +2,7 @@ import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import orderApi from 'apis/orderApi';
 
 export const getOrderAsync = createAsyncThunk(
-  'get/product',
+  'get/order',
   async (params, { rejectWithValue }) => {
     try {
       const response = await orderApi.get(params);
