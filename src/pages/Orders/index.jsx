@@ -1,9 +1,8 @@
+import { unwrapResult } from '@reduxjs/toolkit';
 import {
   Button,
   Col,
-  Form,
   Image,
-  Input,
   Modal,
   Pagination,
   Row,
@@ -11,17 +10,14 @@ import {
   Typography,
 } from 'antd';
 import { LIMIT } from 'config';
-import { deleteUserAsync, updateUserAsync } from 'features/userSlice';
 import { getByIdAsync } from 'features/orderItem';
-import { useGetOrderItem } from 'hooks/useGetOrderItem';
-import { findIndex, get, values } from 'lodash';
+import { useGetOrderItem, deleteOrder } from 'hooks/useGetOrderItem';
+import { get, values } from 'lodash';
 import 'pages/Auth/styles.scss';
 import React, { useCallback, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useHistory, useRouteMatch } from 'react-router';
-import { toast } from 'react-toastify';
 import { formatCurrency } from 'utils/formatCurrency';
-import { unwrapResult } from '@reduxjs/toolkit';
 
 const OrderList = () => {
   const dispatch = useDispatch();
@@ -175,8 +171,15 @@ const OrderList = () => {
             </Col>
             <Col span={6}>
               <Row>
-                <Button
+                {/* <Button
                   danger
+                  style={{ marginLeft: 10 }}
+                  onClick={() => deleteOrder(dispatch, order.id)}>
+                  Delete
+                </Button> */}
+
+                <Button
+                  success
                   style={{ marginLeft: 10 }}
                   onClick={() => onShowDetail(get(order, 'id', ''))}>
                   Xem chi tiết

@@ -1,11 +1,12 @@
 import { unwrapResult } from '@reduxjs/toolkit';
 import { LIMIT } from 'config';
-import { getOrderAsync } from 'features/orderItem';
+import { getOrderAsync, deleteAsync } from 'features/orderItem';
 import { isEmpty, keyBy } from 'lodash';
 import qs from 'query-string';
 import { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useLocation } from 'react-router';
+import { toast } from 'react-toastify';
 
 export const useGetOrderItem = () => {
   const dispatch = useDispatch();
@@ -39,4 +40,14 @@ export const useGetOrderItem = () => {
     orderItemData,
     setOrderItemData,
   };
+};
+
+export const deleteOrder = async (dispatch, id) => {
+  try {
+    const action = await dispatch(deleteAsync(id));
+    // const { totalResults, results } = unwrapResult(action);
+    toast.success('Xóa thành công');
+  } catch (error) {
+    toast.error('Xóa thất bại! Có lỗi xảy ra');
+  }
 };
