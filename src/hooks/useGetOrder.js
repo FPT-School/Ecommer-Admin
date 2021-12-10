@@ -11,7 +11,7 @@ export const useGetOrder = () => {
   const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(true);
   const location = useLocation();
-  const [userData, setUserData] = useState([]);
+  const [orderData, setOrderData] = useState([]);
   const [total, setTotal] = useState(0);
   const search = qs.parse(location.search);
 
@@ -25,7 +25,7 @@ export const useGetOrder = () => {
         );
         const { totalResults, results } = unwrapResult(action);
         setTotal(totalResults);
-        setUserData(keyBy(results, 'id'));
+        setOrderData(keyBy(results, 'id'));
       } finally {
         setIsLoading(false);
       }
@@ -36,7 +36,7 @@ export const useGetOrder = () => {
     page,
     total,
     isLoading,
-    userData,
-    setUserData,
+    orderData,
+    setOrderData,
   };
 };

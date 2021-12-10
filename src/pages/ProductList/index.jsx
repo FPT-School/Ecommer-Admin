@@ -33,6 +33,7 @@ import { useHistory, useRouteMatch, useLocation } from 'react-router';
 import RichTextEditor from 'react-rte';
 import { toast } from 'react-toastify';
 import { formatCurrency } from 'utils/formatCurrency';
+import { DeleteOutlined } from '@ant-design/icons';
 
 const { Option } = Select;
 
@@ -95,8 +96,8 @@ const ProductList = () => {
         productName: _data.productName,
         size: _data.size,
         status: _data.status + '',
-        categoryId: get(_data, "categoryId.id", ""),
-        colorId: get(_data, "colorId.id", ""),
+        categoryId: get(_data, 'categoryId.id', ''),
+        colorId: get(_data, 'colorId.id', ''),
         materialProduct: _data.materialProduct,
       };
 
@@ -109,20 +110,20 @@ const ProductList = () => {
         get(_data, 'imageProductId.id', '61a9c79a1fdf955bd74e8677')
       );
 
-      setFileList(null);
+      // setFileList(null);
 
-      // setFileList(() => {
-      //   const _fileList = [];
-      //   get(_data, 'imageProductId.images', []).map((item, idx) => {
-      //     _fileList.push({
-      //       uid: idx,
-      //       name: 'image.png',
-      //       status: 'done',
-      //       url: item.path,
-      //     });
-      //   });
-      //   return _fileList;
-      // });
+      setFileList(() => {
+        const _fileList = [];
+        get(_data, 'imageProductId.images', []).map((item, idx) => {
+          _fileList.push({
+            uid: idx,
+            name: 'image.png',
+            status: 'done',
+            url: item.path,
+          });
+        });
+        return _fileList;
+      });
     } finally {
       setIsGetDetail(false);
     }
@@ -279,18 +280,19 @@ const ProductList = () => {
     setImages(formData);
   };
 
-  // const handleRemoveImage = (fileId) => {
-  //   const newFileList = fileList.filter((item) => item.uid !== fileId);
-  //   setFileList(newFileList);
-  // };
+  const handleRemoveImage = (fileId) => {
+    const newFileList = fileList.filter((item) => item.uid !== fileId);
+    setFileList(newFileList);
+  };
 
   const handleChangePage = (page) => {
-    history.push(`${match.url}?page=${page}`);
+    const query = qs.parse(location.search);
+    const newParams = qs.stringify({ ...query, page });
+    history.replace({ pathname: location.pathname, search: newParams });
   };
 
   const handleSort = (query) => {
     const params = qs.stringify(qs.parse(query));
-    // history.push(`${match.url}${query}`);
     history.replace({ pathname: location.pathname, search: params });
   };
 
@@ -461,7 +463,7 @@ const ProductList = () => {
             getValueFromEvent={normFile}
             rules={[{ required: true, message: 'Vui lòng nhập trường này' }]}
             extra="...">
-            {/* <Row gutter={24}>
+            <Row gutter={24}>
               {(fileList || []).map((file) => (
                 <Col span={8}>
                   <Image src={file.url} width={100} height={100} />
@@ -472,7 +474,7 @@ const ProductList = () => {
                   </div>
                 </Col>
               ))}
-            </Row> */}
+            </Row>
             <Upload
               // showUploadList={false}
               onChange={handleChange}
