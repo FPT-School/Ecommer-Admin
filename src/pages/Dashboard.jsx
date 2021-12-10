@@ -66,7 +66,7 @@ const Dashboard = () => {
     },
     {
       icon: 'bx bx-dollar-circle',
-      count: '$2,632',
+      count: '2,632,000',
       title: 'Tổng thu nhập',
     },
     {
