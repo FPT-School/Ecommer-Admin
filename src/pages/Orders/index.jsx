@@ -1,50 +1,198 @@
-import React from 'react';
-import { useState, useEffect } from 'react';
-import { Table } from 'antd';
+import { Button, Col, Form, Input, Modal, Row, Spin, Pagination } from 'antd';
+import { LIMIT } from 'config';
+import { deleteUserAsync, updateUserAsync } from 'features/userSlice';
+import { useGetOrder } from 'hooks/useGetOrder';
+import { useGetUser } from 'hooks/useGetUser';
+import { findIndex, get, values } from 'lodash';
+import 'pages/Auth/styles.scss';
+import React, { useCallback, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { useHistory, useRouteMatch } from 'react-router';
+import { toast } from 'react-toastify';
 
-import './styles.scss';
+const OrderList = () => {
+  const dispatch = useDispatch();
+  const history = useHistory();
+  const match = useRouteMatch();
+  const [isShow, setIsShow] = useState(false);
+  const [formName, setFormName] = useState('add');
+  const [currentId, setCurrentId] = useState(null);
+  const { page, total, isLoading, orderData, setOrderData } = useGetOrder();
+  const isFormAdd = formName === 'add';
 
-const Orders = () => {
-  const [users, setUsers] = useState([]);
+  const onToggle = useCallback(() => {
+    setIsShow(!isShow);
+  }, [isShow]);
 
-  useEffect(() => {
-    fetch('https://jsonplaceholder.typicode.com/users')
-      .then((res) => res.json())
-      .then((user) => setUsers(user));
-  }, []);
+  const onCloseModal = useCallback(() => {
+    setIsShow(false);
+    setFormName('add');
+  }, [isShow]);
 
-  const columns = [
-    {
-      title: 'Mã đơn',
-      dataIndex: 'id',
-      key: 'id',
+  const updateColor = useCallback(
+    async (formValue) => {
+      try {
+        const includeColor = findIndex(
+          values(orderData),
+          (elm) => elm.categoryName === formValue.categoryName
+        );
+
+        if (includeColor === -1) {
+          const payload = { id: currentId, data: formValue };
+          await dispatch(updateUserAsync(payload));
+
+          orderData[currentId] = {
+            categoryName: formValue.categoryName,
+            id: currentId,
+          };
+          setOrderData({ ...orderData });
+
+          Promise.resolve()
+            .then(onCloseModal())
+            .then(setFormName('add'))
+            .then(toast.success('Cập nhập thành công !'));
+        } else {
+          toast.error(`danh mục ${formValue.categoryName} này đã tồn tại`, {
+            autoClose: 2000,
+            theme: 'colored',
+          });
+        }
+      } catch (e) {
+        toast.error(e.message, {
+          autoClose: 2000,
+          theme: 'colored',
+        });
+      }
     },
-    {
-      title: 'Người dùng',
-      dataIndex: 'username',
-      key: 'username',
-    },
-    {
-      title: 'Tổng tiền',
-      dataIndex: 'total',
-      key: 'total',
-    },
-  ];
+    [orderData, currentId]
+  );
 
-  const dataSource = [
-    {
-      id: '1',
-      username: 'Mike',
-      total: 12000,
-    },
-  ];
+  const onFinish = (values) => {
+    updateColor(values);
+  };
 
+  const deleteUser = useCallback(
+    async (id) => {
+      try {
+        await dispatch(deleteUserAsync(id));
+        delete orderData[id];
+        setOrderData({ ...orderData });
+        toast.success('Xoá tài khoản thành công !');
+      } catch (e) {
+        toast.error(e.message, {
+          autoClose: 2000,
+          theme: 'colored',
+        });
+      }
+    },
+    [orderData]
+  );
+
+  const handleChange = (page) => {
+    history.push(`${match.url}?page=${page}`);
+  };
+
+  if (isLoading) return <Spin />;
   return (
-    <div className="order">
-      <h2 className="page-header">Đặt hàng</h2>
-      <Table dataSource={dataSource} columns={columns} />;
-    </div>
+    <>
+      <Modal
+        title={isFormAdd ? 'Thêm danh mục sản phẩm' : 'Cập nhập danh mục'}
+        visible={isShow}
+        onCancel={onCloseModal}
+        footer={null}>
+        <Form
+          name="basic"
+          initialValues={{ remember: true }}
+          onFinish={onFinish}
+          layout="vertical"
+          autoComplete="off">
+          <Form.Item
+            label="Tên danh mục"
+            name="categoryName"
+            rules={[{ required: true, message: 'Vui lòng nhập tên danh mục' }]}>
+            <Input placeholder="Tên danh mục..." />
+          </Form.Item>
+
+          <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
+            <Row align="middle" justify="end">
+              <Col>
+                <Button type="default" onClick={onToggle}>
+                  Huỷ bỏ
+                </Button>
+              </Col>
+
+              <Col>
+                <Button
+                  type="primary"
+                  style={{ marginLeft: 5 }}
+                  htmlType="submit">
+                  Cập nhật
+                </Button>
+              </Col>
+            </Row>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Row
+        gutter={24}
+        align="middle"
+        justify="space-between"
+        style={{
+          background: '#FAFAFA',
+          padding: 10,
+        }}>
+        <Col span={2}>STT</Col>
+        <Col span={5}> Email</Col>
+        <Col span={5}> Địa chỉ</Col>
+        <Col span={6}> Số điện thoại</Col>
+        <Col span={6}> Hành động khác</Col>
+      </Row>
+
+      {values(orderData).map((user, idx) => {
+        return (
+          <Row
+            key={user.id}
+            gutter={24}
+            align="middle"
+            justify="space-between"
+            style={{
+              background: '#FAFAFA',
+              padding: 10,
+            }}>
+            <Col span={2}>{idx + 1}</Col>
+            <Col span={5}>{get(user, 'email', '')}</Col>
+            <Col span={5}>{get(user, 'address', '')}</Col>
+            <Col span={6}>{get(user, 'phoneNumber', '')}</Col>
+            <Col span={6}>
+              <Row>
+                {/* <Button
+                  type="primary"
+                  onClick={() => onUpdate(get(user, 'id', ''))}>
+                  Sửa
+                </Button> */}
+                <Button
+                  danger
+                  style={{ marginLeft: 10 }}
+                  onClick={() => deleteUser(get(user, 'id', ''))}>
+                  Xoá
+                </Button>
+              </Row>
+            </Col>
+          </Row>
+        );
+      })}
+
+      <div style={{ paddingTop: 10 }}>
+        <Pagination
+          current={+page}
+          total={total}
+          pageSize={LIMIT}
+          onChange={handleChange}
+        />
+      </div>
+    </>
   );
 };
 
-export default Orders;
+export default OrderList;
