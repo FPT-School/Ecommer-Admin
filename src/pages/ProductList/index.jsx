@@ -361,7 +361,7 @@ const ProductList = () => {
                   { required: true, message: 'Vui lòng nhập trường này' },
                 ]}>
                 <Select>
-                  {categoryData.map((elm) => (
+                  {values(categoryData).map((elm) => (
                     <Select.Option key={elm.id} value={elm.id}>
                       {get(elm, 'categoryName', '')}
                     </Select.Option>
