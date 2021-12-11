@@ -6,6 +6,7 @@ const UNAUTHORIZED = 401;
 const FORBIDDEN = 403;
 
 const API_URL = 'https://ecommer-backend-g6sfl.ondigitalocean.app/api/';
+// const API_URL = 'http://localhost:8080/api/';
 const axiosClient = axios.create({
   baseURL: API_URL,
   headers: {
