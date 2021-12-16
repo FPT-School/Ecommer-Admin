@@ -21,7 +21,7 @@ export const useGetOrder = () => {
     (async () => {
       try {
         const action = await dispatch(
-          getOrderAsync({ page: +page, limit: LIMIT })
+          getOrderAsync({ page: +page, limit: LIMIT, populate: 'userId,orderItemId' })
         );
         const { totalResults, results } = unwrapResult(action);
         setTotal(totalResults);

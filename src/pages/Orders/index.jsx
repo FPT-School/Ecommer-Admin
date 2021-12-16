@@ -12,6 +12,7 @@ import {
 import { LIMIT } from 'config';
 import { getByIdAsync } from 'features/orderItem';
 import { useGetOrderItem, deleteOrder } from 'hooks/useGetOrderItem';
+import { useGetOrder } from 'hooks/useGetOrder';
 import { get, values } from 'lodash';
 import 'pages/Auth/styles.scss';
 import React, { useCallback, useState } from 'react';
@@ -27,12 +28,9 @@ const OrderList = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const [currentOrder, setCurrentOrder] = useState(null);
-  const {
-    page,
-    total,
-    isLoading: isFetchOrder,
-    orderItemData,
-  } = useGetOrderItem();
+  
+
+  const { page, total, isLoading: isFetchOrder, orderData } = useGetOrder();
 
   const onCloseModal = useCallback(() => {
     setIsShow(false);
@@ -77,7 +75,7 @@ const OrderList = () => {
           <Col span={4}> Giá tiền</Col>
           <Col span={3}> Giảm giá</Col>
           <Col span={4}> Hình ảnh</Col>
-          <Col span={6}> Tình trạng </Col>
+          {/* <Col span={6}> Tình trạng </Col> */}
         </Row>
 
         {get(currentOrder, 'product', []).map((product, idx) => {
@@ -122,11 +120,11 @@ const OrderList = () => {
                 </Image.PreviewGroup>
               </Col>
               <Col span={6}>
-                {
+                {/* {
                   { 0: 'Chưa giao hàng', 1: 'Đã giao hàng' }[
                     product.productId.status
                   ]
-                }
+                } */}
               </Col>
             </Row>
           );
@@ -150,10 +148,12 @@ const OrderList = () => {
         <Col span={2}>STT</Col>
         <Col span={5}> Mã Order</Col>
         <Col span={5}> Số tiền</Col>
+        <Col span={5}> Tình trạng</Col>
         <Col span={6}> Hành động khác</Col>
       </Row>
 
-      {values(orderItemData).map((order, idx) => {
+      {values(orderData).map((order, idx) => {
+        console.log(orderData, 'orderdata')
         return (
           <Row
             key={order.id}
@@ -167,8 +167,15 @@ const OrderList = () => {
             <Col span={2}>{idx + 1}</Col>
             <Col span={5}>{get(order, 'id', '').substring(10, 3)}</Col>
             <Col span={5}>
-              {formatCurrency(get(order, 'unitPrice', '000'), 'VND')}
+              {formatCurrency(get(order, 'orderItemId.unitPrice', '000'), 'VND')}
             </Col>
+            <Col span={5}>
+                {
+                  { 0: 'Đang chờ', 1: 'Đã hoàn thành' }[
+                    order.status
+                  ]
+                }
+              </Col>
             <Col span={6}>
               <Row>
                 {/* <Button
@@ -181,7 +188,7 @@ const OrderList = () => {
                 <Button
                   success
                   style={{ marginLeft: 10 }}
-                  onClick={() => onShowDetail(get(order, 'id', ''))}>
+                  onClick={() => onShowDetail(get(order, 'orderItemId.id', ''))}>
                   Xem chi tiết
                 </Button>
               </Row>
