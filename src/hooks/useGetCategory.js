@@ -6,7 +6,7 @@ import { useDispatch } from 'react-redux';
 import { get, isEmpty, keyBy } from 'lodash';
 
 import { useLocation } from 'react-router-dom';
-export const useGetCategory = () => {
+export const useGetCategory = ({limit = 10}) => {
   const dispatch = useDispatch();
   const location = useLocation();
   const [categoryData, setCategoryData] = useState({});
@@ -18,7 +18,7 @@ export const useGetCategory = () => {
   useEffect(() => {
     (async () => {
       try {
-        const getCategoryAction = await dispatch(getCategoryAsync({ page }));
+        const getCategoryAction = await dispatch(getCategoryAsync({ page, limit }));
         const { totalResults, results } = unwrapResult(getCategoryAction);
         setCategoryData(keyBy(results, 'id'));
         setTotal(totalResults);

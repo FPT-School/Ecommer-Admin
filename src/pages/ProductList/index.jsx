@@ -56,7 +56,7 @@ const ProductList = () => {
   const [idCollectImage, setIdCollectImage] = useState(null);
   const [dataUpdate, setDataUpdate] = useState({});
 
-  const { categoryData } = useGetCategory();
+  const { categoryData } = useGetCategory({ limit: 100 });
   const { colorData } = useGetColor();
 
   const [valueRTE, setValueRTE] = useState(RichTextEditor.createEmptyValue());
