@@ -2,6 +2,7 @@ import axios from 'axios';
 import { ACCESS_TOKEN, REFRESH_TOKEN } from 'config';
 import { toast } from 'react-toastify';
 
+console.log('hello')
 const UNAUTHORIZED = 401;
 const FORBIDDEN = 403;
 
