@@ -33,10 +33,5 @@
         "display_name": "Thống kê",
         "route": "/analytics",
         "icon": "bx bx-bar-chart-alt"
-    },
-    {
-        "display_name": "Giảm giá",
-        "route": "/discount",
-        "icon": "bx bx-gift"
     }
 ]

@@ -99,6 +99,7 @@ const OrderList = () => {
               <Col span={2}>{idx + 1}</Col>
               <Col span={2}> {get(product, 'productId.productCode', '')}</Col>
               <Col span={3}> {get(product, 'productId.productName', '')}</Col>
+              {/* <Col span={2}> {get(order, 'orderItemId.address', 'Da nang')}</Col> */}
               <Col span={4}>
                 {formatCurrency(
                   (product.productId.price -
@@ -154,6 +155,7 @@ const OrderList = () => {
         }}>
         <Col span={2}>STT</Col>
         <Col span={4}> Người đặt</Col>
+        <Col span={4}> Điện thoại liên hệ, địa chỉ</Col>
         <Col span={4}> Điện thoại liên hệ</Col>
         <Col span={5}> Tình trạng</Col>
         <Col span={5}> Ngày giao/ nhận</Col>
@@ -173,7 +175,10 @@ const OrderList = () => {
             }}>
             <Col span={2}>{idx + 1}</Col>
             <Col span={4}>{get(order, 'userId.userName', '')}</Col>
-            <Col span={4}>{get(order, 'userId.phoneNumber', '')}</Col>
+            <Col span={4}>
+              {get(order, 'userId.phoneNumber', '')} <br />
+              {get(order, 'orderItemId.address', '')}
+            </Col>
             <Col span={5}>
               {
                 { 0: 'Đang tiến hành', 1: 'Thành công' }[
@@ -183,7 +188,9 @@ const OrderList = () => {
             </Col>
 
             <Col span={5}>
-              <div>Ngày tiếp nhận: {moment(order.orderDate).format('DD-MM-YYYY')}</div>
+              <div>
+                Ngày tiếp nhận: {moment(order.orderDate).format('DD-MM-YYYY')}
+              </div>
             </Col>
             <Col span={4}>
               <Row>
@@ -197,8 +204,11 @@ const OrderList = () => {
                 <Button
                   success
                   style={{ marginLeft: 10 }}
-                  onClick={() => onShowDetail(get(order, 'orderItemId.id', ''))}
-                >
+                  onClick={() =>
+                    onShowDetail(
+                      get(order, 'orderItemId.id', '61c41ce890d623a9e71eadd1')
+                    )
+                  }>
                   Xem chi tiết
                 </Button>
               </Row>

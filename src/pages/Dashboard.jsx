@@ -1,57 +1,25 @@
-import React from 'react';
-import StatusCard from '../components/status-card/StatusCard';
-import statusCards from '../assets/JsonData/status-card-data.json';
-import Chart from 'react-apexcharts';
-import { useGetUser } from 'hooks/useGetUser';
+import { unwrapResult } from '@reduxjs/toolkit';
+import { getAnalysisOrders } from 'features/analyticSlice';
 import { useGetOrderList } from 'hooks/useGetOrder';
-
-const chartOptions = {
-  series: [
-    {
-      name: 'Online Customers',
-      data: [40, 70, 20, 90, 36, 80, 30, 91, 60],
-    },
-    {
-      name: 'Store Customers',
-      data: [40, 30, 70, 80, 40, 16, 40, 20, 51, 10],
-    },
-  ],
-  options: {
-    color: ['#6ab04c', '#2980b9'],
-    chart: {
-      background: 'transparent',
-    },
-    dataLabels: {
-      enabled: false,
-    },
-    stroke: {
-      curve: 'smooth',
-    },
-    xaxis: {
-      categories: [
-        'Jan',
-        'Feb',
-        'Mar',
-        'Apr',
-        'May',
-        'Jun',
-        'Jul',
-        'Aug',
-        'Sep',
-      ],
-    },
-    legend: {
-      position: 'top',
-    },
-    grid: {
-      show: false,
-    },
-  },
-};
+import { useGetUser } from 'hooks/useGetUser';
+import React, { useState, useEffect } from 'react';
+import { useDispatch } from 'react-redux';
+import StatusCard from '../components/status-card/StatusCard';
 
 const Dashboard = () => {
+  const [countOrderSuccess, setCountOrderSuccess ] = useState(0);
   const { total: _totalUser } = useGetUser();
   const { total: _totalOrder } = useGetOrderList();
+
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    (async () => {
+      const orderSuccess = await dispatch(getAnalysisOrders({ status: 1 }));
+      const { totalResults } = unwrapResult(orderSuccess);
+      setCountOrderSuccess(totalResults || 0);
+    })();
+  }, [dispatch]);
 
   const data = [
     {
@@ -61,8 +29,8 @@ const Dashboard = () => {
     },
     {
       icon: 'bx bx-cart',
-      count: '2,001',
-      title: 'Đơn hàng',
+      count: countOrderSuccess,
+      title: 'Đơn hàng thành công',
     },
     {
       icon: 'bx bx-dollar-circle',
@@ -79,7 +47,7 @@ const Dashboard = () => {
     <div>
       <h2 className="page-header">Tổng quan </h2>
       <div className="row">
-        <div className="col-6">
+        <div className="col-12">
           <div className="row">
             {data.map((item, index) => (
               <div className="col-6" key={index}>
@@ -91,16 +59,6 @@ const Dashboard = () => {
                 />
               </div>
             ))}
-          </div>
-        </div>
-        <div className="col-6">
-          <div className="card full-height">
-            <Chart
-              options={chartOptions.options}
-              series={chartOptions.series}
-              type="line"
-              height="100%"
-            />
           </div>
         </div>
       </div>
